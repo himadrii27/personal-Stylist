@@ -4,6 +4,7 @@ import LiquidPixelWave from './components/LiquidPixelWave';
 import Preferences from './components/Preferences';
 import OccasionForm from './components/OccasionForm';
 import Recommendation from './components/Recommendation';
+import { generateArtistVector, calculateSimilarity } from './utils/styleEngine';
 
 const pageVariants = {
   initial: { opacity: 0, y: 12 },
@@ -12,61 +13,50 @@ const pageVariants = {
 };
 
 const stagger = { animate: { transition: { staggerChildren: 0.06 } } };
-
-// --- DATA LAYER ---
 const GARMENT_DATABASE = {
   top: [
-    { name: "Silk Camisole", vibes: ["minimalist", "polished"], weather: ["warm", "all"], gender: "F" },
-    { name: "Structured Blazer", vibes: ["polished", "classic"], weather: ["all", "cold"], gender: "any" },
-    { name: "Graphic Mesh Bodysuit", vibes: ["loud", "experimental"], weather: ["warm", "all"], gender: "F" },
-    { name: "Pima Cotton Tee", vibes: ["minimalist", "classic"], weather: ["warm", "all"], gender: "any" },
-    { name: "Reflective Tech Jersey", vibes: ["industrial", "sporty"], weather: ["warm", "all"], gender: "any" },
-    { name: "Victorian Corset Top", vibes: ["experimental", "pop"], weather: ["all"], gender: "F" },
-    { name: "Metallic Fringe Vest", vibes: ["loud", "experimental", "pop"], weather: ["warm"], gender: "any" },
-    { name: "Heavyweight Overshirt", vibes: ["minimalist", "industrial"], weather: ["cold", "all"], gender: "M" },
-    { name: "Sheer Organza Shirt", vibes: ["polished", "experimental"], weather: ["warm"], gender: "any" },
-    { name: "Compression Knit Top", vibes: ["industrial", "techno"], weather: ["all"], gender: "any" },
-    { name: "Raw-edge Heavy Tee", vibes: ["industrial", "minimalist"], weather: ["all"], gender: "any" }
+    { name: "Silk Camisole", vectors: { minimal_loud: -0.5, fitted_oversized: -0.4, classic_experimental: -0.3, soft_edgy: -0.4, casual_glam: 0.6 }, weather: ["warm", "all"], gender: "F" },
+    { name: "Structured Blazer", vectors: { minimal_loud: -0.3, fitted_oversized: -0.5, classic_experimental: -0.4, soft_edgy: 0.2, casual_glam: 0.4 }, weather: ["all", "cold"], gender: "any" },
+    { name: "Graphic Mesh Bodysuit", vectors: { minimal_loud: 0.6, fitted_oversized: -0.6, classic_experimental: 0.5, soft_edgy: 0.4, casual_glam: 0.3 }, weather: ["warm", "all"], gender: "F" },
+    { name: "Pima Cotton Tee", vectors: { minimal_loud: -0.8, fitted_oversized: -0.1, classic_experimental: -0.7, soft_edgy: -0.6, casual_glam: -0.5 }, weather: ["warm", "all"], gender: "any" },
+    { name: "Reflective Tech Jersey", vectors: { minimal_loud: 0.4, fitted_oversized: 0.2, classic_experimental: 0.6, soft_edgy: 0.3, casual_glam: -0.2 }, weather: ["warm", "all"], gender: "any" },
+    { name: "Victorian Corset Top", vectors: { minimal_loud: 0.3, fitted_oversized: -0.7, classic_experimental: 0.5, soft_edgy: -0.3, casual_glam: 0.4 }, weather: ["all"], gender: "F" },
+    { name: "Metallic Fringe Vest", vectors: { minimal_loud: 0.8, fitted_oversized: -0.2, classic_experimental: 0.6, soft_edgy: 0.2, casual_glam: 0.7 }, weather: ["warm"], gender: "any" },
+    { name: "Heavyweight Overshirt", vectors: { minimal_loud: -0.4, fitted_oversized: 0.4, classic_experimental: 0.2, soft_edgy: 0.3, casual_glam: -0.4 }, weather: ["cold", "all"], gender: "M" },
+    { name: "Sheer Organza Shirt", vectors: { minimal_loud: -0.2, fitted_oversized: -0.3, classic_experimental: 0.6, soft_edgy: -0.4, casual_glam: 0.5 }, weather: ["warm"], gender: "any" },
+    { name: "Compression Knit Top", vectors: { minimal_loud: -0.1, fitted_oversized: -0.4, classic_experimental: 0.4, soft_edgy: 0.5, casual_glam: -0.3 }, weather: ["all"], gender: "any" },
+    { name: "Raw-edge Heavy Tee", vectors: { minimal_loud: -0.3, fitted_oversized: 0.3, classic_experimental: 0.4, soft_edgy: 0.4, casual_glam: -0.5 }, weather: ["all"], gender: "any" }
   ],
   bottom: [
-    { name: "Tailored Trousers", vibes: ["polished", "classic"], weather: ["all"], gender: "any" },
-    { name: "Baggy Cargo Pants", vibes: ["industrial", "trendy"], weather: ["all"], gender: "any" },
-    { name: "Distressed Mini Skirt", vibes: ["loud", "trendy"], weather: ["warm"], gender: "F" },
-    { name: "Wide-leg Raw Denim", vibes: ["minimalist", "classic"], weather: ["all"], gender: "any" },
-    { name: "Technical Biker Shorts", vibes: ["sporty", "industrial"], weather: ["warm"], gender: "any" },
-    { name: "Silver Hardware Chinos", vibes: ["industrial", "polished"], weather: ["all"], gender: "M" },
-    { name: "Sequin Wide-leg Pants", vibes: ["loud", "pop"], weather: ["all"], gender: "F" },
-    { name: "Leather Racing Pants", vibes: ["loud", "industrial"], weather: ["all"], gender: "any" },
-    { name: "Pleated Micro Skirt", vibes: ["trendy", "pop"], weather: ["warm"], gender: "F" }
+    { name: "Tailored Trousers", vectors: { minimal_loud: -0.6, fitted_oversized: -0.5, classic_experimental: -0.4, soft_edgy: -0.2, casual_glam: 0.4 }, weather: ["all"], gender: "any" },
+    { name: "Baggy Cargo Pants", vectors: { minimal_loud: 0.2, fitted_oversized: 0.8, classic_experimental: 0.3, soft_edgy: 0.4, casual_glam: -0.4 }, weather: ["all"], gender: "any" },
+    { name: "Distressed Mini Skirt", vectors: { minimal_loud: 0.5, fitted_oversized: -0.4, classic_experimental: 0.2, soft_edgy: 0.5, casual_glam: -0.2 }, weather: ["warm"], gender: "F" },
+    { name: "Wide-leg Raw Denim", vectors: { minimal_loud: -0.4, fitted_oversized: 0.5, classic_experimental: -0.3, soft_edgy: -0.2, casual_glam: -0.3 }, weather: ["all"], gender: "any" },
+    { name: "Technical Biker Shorts", vectors: { minimal_loud: -0.2, fitted_oversized: -0.7, classic_experimental: 0.4, soft_edgy: 0.1, casual_glam: -0.5 }, weather: ["warm"], gender: "any" },
+    { name: "Silver Hardware Chinos", vectors: { minimal_loud: -0.2, fitted_oversized: 0.1, classic_experimental: 0.2, soft_edgy: 0.4, casual_glam: -0.3 }, weather: ["all"], gender: "M" },
+    { name: "Sequin Wide-leg Pants", vectors: { minimal_loud: 0.6, fitted_oversized: 0.4, classic_experimental: 0.4, soft_edgy: -0.3, casual_glam: 0.8 }, weather: ["all"], gender: "F" },
+    { name: "Leather Racing Pants", vectors: { minimal_loud: 0.5, fitted_oversized: 0.2, classic_experimental: 0.4, soft_edgy: 0.7, casual_glam: -0.2 }, weather: ["all"], gender: "any" },
+    { name: "Pleated Micro Skirt", vectors: { minimal_loud: 0.4, fitted_oversized: -0.6, classic_experimental: 0.5, soft_edgy: -0.5, casual_glam: 0.3 }, weather: ["warm"], gender: "F" }
   ],
   footwear: [
-    { name: "Square-toe Leather Boots", vibes: ["polished", "classic"], weather: ["all", "cold"], gender: "any" },
-    { name: "Platform Sneakers", vibes: ["trendy", "loud"], weather: ["all"], gender: "any" },
-    { name: "Avant-garde Thigh-highs", vibes: ["experimental", "loud"], weather: ["all"], gender: "F" },
-    { name: "Leather Loafers", vibes: ["polished", "classic"], weather: ["all"], gender: "any" },
-    { name: "Technical Sandals", vibes: ["industrial", "sporty"], weather: ["warm"], gender: "any" },
-    { name: "Chunky Combat Boots", vibes: ["industrial", "classic"], weather: ["all", "cold", "rainy"], gender: "any" },
-    { name: "Dad Shoes", vibes: ["sporty", "trendy"], weather: ["all"], gender: "any" },
-    { name: "Silver Pointed Stilettos", vibes: ["loud", "polished"], weather: ["all"], gender: "F" }
+    { name: "Square-toe Leather Boots", vectors: { minimal_loud: -0.4, fitted_oversized: -0.5, classic_experimental: 0.2, soft_edgy: 0.3, casual_glam: 0.5 }, weather: ["all", "cold"], gender: "any" },
+    { name: "Platform Sneakers", vectors: { minimal_loud: 0.5, fitted_oversized: 0.6, classic_experimental: 0.4, soft_edgy: -0.2, casual_glam: 0.2 }, weather: ["all"], gender: "any" },
+    { name: "Avant-garde Thigh-highs", vectors: { minimal_loud: 0.7, fitted_oversized: -0.4, classic_experimental: 0.8, soft_edgy: 0.4, casual_glam: 0.6 }, weather: ["all"], gender: "F" },
+    { name: "Leather Loafers", vectors: { minimal_loud: -0.7, fitted_oversized: -0.6, classic_experimental: -0.4, soft_edgy: -0.5, casual_glam: 0.3 }, weather: ["all"], gender: "any" },
+    { name: "Technical Sandals", vectors: { minimal_loud: -0.1, fitted_oversized: -0.2, classic_experimental: 0.5, soft_edgy: 0.1, casual_glam: -0.6 }, weather: ["warm"], gender: "any" },
+    { name: "Chunky Combat Boots", vectors: { minimal_loud: 0.2, fitted_oversized: 0.4, classic_experimental: 0.2, soft_edgy: 0.6, casual_glam: -0.4 }, weather: ["all", "cold", "rainy"], gender: "any" },
+    { name: "Dad Shoes", vectors: { minimal_loud: 0.2, fitted_oversized: 0.5, classic_experimental: -0.2, soft_edgy: -0.4, casual_glam: -0.6 }, weather: ["all"], gender: "any" },
+    { name: "Silver Pointed Stilettos", vectors: { minimal_loud: 0.4, fitted_oversized: -0.8, classic_experimental: 0.5, soft_edgy: -0.2, casual_glam: 0.8 }, weather: ["all"], gender: "F" }
   ],
   layering: [
-    { name: "Nylon Windbreaker", vibes: ["sporty", "industrial"], weather: ["windy", "rainy", "all"], gender: "any" },
-    { name: "Distressed Bomber", vibes: ["trendy", "industrial"], weather: ["cold", "all"], gender: "any" },
-    { name: "Wool Overcoat", vibes: ["classic", "polished"], weather: ["cold"], gender: "any" },
-    { name: "Padded Vest", vibes: ["sporty", "industrial"], weather: ["cold", "all"], gender: "any" },
-    { name: "Sheer Trench Coat", vibes: ["experimental", "polished"], weather: ["warm", "all"], gender: "any" },
-    { name: "Leather Racing Jacket", vibes: ["loud", "industrial"], weather: ["all", "cold"], gender: "any" },
-    { name: "Oversized Denim Jacket", vibes: ["classic", "trendy"], weather: ["all"], gender: "any" }
+    { name: "Nylon Windbreaker", vectors: { minimal_loud: 0.1, fitted_oversized: 0.5, classic_experimental: 0.4, soft_edgy: 0.4, casual_glam: -0.5 }, weather: ["windy", "rainy", "all"], gender: "any" },
+    { name: "Distressed Bomber", vectors: { minimal_loud: 0.3, fitted_oversized: 0.6, classic_experimental: 0.2, soft_edgy: 0.5, casual_glam: -0.3 }, weather: ["cold", "all"], gender: "any" },
+    { name: "Wool Overcoat", vectors: { minimal_loud: -0.6, fitted_oversized: -0.1, classic_experimental: -0.5, soft_edgy: -0.2, casual_glam: 0.3 }, weather: ["cold"], gender: "any" },
+    { name: "Padded Vest", vectors: { minimal_loud: -0.1, fitted_oversized: 0.5, classic_experimental: -0.2, soft_edgy: 0.3, casual_glam: -0.6 }, weather: ["cold", "all"], gender: "any" },
+    { name: "Sheer Trench Coat", vectors: { minimal_loud: -0.1, fitted_oversized: 0, classic_experimental: 0.6, soft_edgy: -0.3, casual_glam: 0.4 }, weather: ["warm", "all"], gender: "any" },
+    { name: "Leather Racing Jacket", vectors: { minimal_loud: 0.5, fitted_oversized: 0.3, classic_experimental: 0.5, soft_edgy: 0.8, casual_glam: -0.2 }, weather: ["all", "cold"], gender: "any" },
+    { name: "Oversized Denim Jacket", vectors: { minimal_loud: -0.1, fitted_oversized: 0.7, classic_experimental: -0.2, soft_edgy: 0.1, casual_glam: -0.3 }, weather: ["all"], gender: "any" }
   ]
-};
-
-const ARTIST_MAPPING = {
-  'swift': { vibes: ['pop', 'classic', 'polished'], desc: 'Eras Aesthetic' },
-  'harry': { vibes: ['experimental', 'loud', 'trendy'], desc: 'Love on Tour Vibe' },
-  'witte': { vibes: ['industrial', 'techno', 'minimalist'], desc: 'KNTXT Dark Aesthetic' },
-  'techno': { vibes: ['industrial', 'minimalist', 'techno'], desc: 'Rave Ready' },
-  'gala': { vibes: ['polished', 'experimental', 'loud'], desc: 'High Fashion' },
-  'festival': { vibes: ['loud', 'sporty', 'trendy'], desc: 'Day Party' }
 };
 
 const WEATHER_MAPPING = {
@@ -106,8 +96,15 @@ function App() {
     const { occasion, weather, artist, location } = occasionData;
 
     const weatherTag = WEATHER_MAPPING[weather] || 'all';
-    const artistKey = Object.keys(ARTIST_MAPPING).find(key => artist.toLowerCase().includes(key));
-    const artistData = artistKey ? ARTIST_MAPPING[artistKey] : null;
+
+    // --- STYLE INTELLIGENCE AGENT PIPELINE ---
+    // Guessing genre for base vector selection
+    let genreHint = 'neutral';
+    if (occasion.toLowerCase().includes('techno') || artist.toLowerCase().includes('witte')) genreHint = 'techno';
+    else if (artist.toLowerCase().includes('swift')) genreHint = 'pop';
+
+    const artistVectorData = generateArtistVector(artist, genreHint);
+    const artistVector = artistVectorData.artistStyleVector;
 
     // Filter Logic
     const filterGarments = (category) => {
@@ -123,27 +120,9 @@ function App() {
         return genderMatch && weatherMatch;
       });
 
-      // Score based on vibes
+      // Score based on vector similarity
       const scored = filtered.map(item => {
-        let score = 0;
-
-        // Match artist vibes (high priority)
-        if (artistData) {
-          artistData.vibes.forEach(v => {
-            if (item.vibes.includes(v)) score += 5;
-          });
-        }
-
-        // Match slider vibes
-        if (sliders.minimalLoud < 40 && item.vibes.includes('minimalist')) score += 3;
-        if (sliders.minimalLoud > 60 && item.vibes.includes('loud')) score += 3;
-        if (sliders.classicTrendy < 40 && item.vibes.includes('classic')) score += 3;
-        if (sliders.classicTrendy > 60 && item.vibes.includes('trendy')) score += 3;
-        if (sliders.sportyPolished < 40 && item.vibes.includes('sporty')) score += 3;
-        if (sliders.sportyPolished > 60 && item.vibes.includes('polished')) score += 3;
-        if (sliders.safeExperimental > 70 && item.vibes.includes('experimental')) score += 3;
-        if (item.vibes.includes('industrial') && (artistData?.vibes.includes('industrial') || occasion.toLowerCase().includes('techno'))) score += 4;
-
+        const score = calculateSimilarity(artistVector, item.vectors);
         return { ...item, score };
       });
 
@@ -162,7 +141,7 @@ function App() {
     };
 
     setRecommendation({
-      title: `${artistData ? artistData.desc : (artist || 'Custom')} ${occasion}`,
+      title: `${artist || 'Custom'} ${occasion}`,
       options: {
         top: filterGarments('top'),
         bottom: filterGarments('bottom'),
@@ -170,15 +149,15 @@ function App() {
         layering: filterGarments('layering'),
       },
       inspo: {
-        artistStyle: artistData ? artistData.desc : "Personal Vibe",
+        artistStyle: artistVectorData.dominantSignals.join(', '),
         audienceStyle: `${occasion} Aesthetic`,
         vibe: sliders.minimalLoud > 50 ? 'Loud' : 'Minimal',
         image: getInspoImage(),
         artist: artist || ""
       },
       tips: [
-        `Optimized for ${weather} conditions in ${location}.`,
-        artistData ? `Drawing inspiration from ${artist}'s signature palette.` : "Focusing on your unique style profile."
+        `Analysis dominant signals: ${artistVectorData.dominantSignals.join(', ')}.`,
+        `Optimized for ${weather} conditions in ${location}.`
       ]
     });
   };

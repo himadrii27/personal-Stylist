@@ -80,10 +80,12 @@ function Recommendation({ data }) {
                 </div>
 
                 <div style={{ background: 'rgba(0, 102, 255, 0.05)', padding: '1.25rem', borderRadius: 'var(--framer-radius-sm)', marginBottom: '2rem', border: '1px solid var(--framer-border)' }}>
-                    <h4 style={{ color: 'var(--framer-accent)', marginBottom: '0.5rem', fontSize: '0.8125rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Styling note</h4>
-                    <p style={{ color: 'var(--framer-text)', fontSize: '0.9375rem', fontStyle: 'italic', lineHeight: 1.5 }}>
-                        "This curated selection perfectly balances your {inspo.vibe.toLowerCase()} preferences with the {title}'s requirements."
-                    </p>
+                    <h4 style={{ color: 'var(--framer-accent)', marginBottom: '0.5rem', fontSize: '0.8125rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Style Insights</h4>
+                    <ul style={{ paddingLeft: '1.25rem', color: 'var(--framer-text)', fontSize: '0.875rem', lineHeight: 1.6 }}>
+                        {tips.map((tip, i) => (
+                            <li key={i} style={{ marginBottom: '0.375rem' }}>{tip}</li>
+                        ))}
+                    </ul>
                 </div>
 
                 <motion.button
