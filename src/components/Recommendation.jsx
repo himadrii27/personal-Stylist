@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useMotionValue, useMotionTemplate } from 'framer-motion';
-import { Shirt, Layers, Wind, Footprints } from 'lucide-react';
+import { Shirt, Layers, Wind, Footprints, ShoppingBag, ExternalLink, Loader2 } from 'lucide-react';
 import { RippleButton } from './ui/ripple-button';
 import { generateOutfitImage } from '../utils/geminiService';
+import { searchAllCategories } from '../utils/productSearchService';
 
 const serif = '"Cormorant Garant", Georgia, serif';
 
@@ -123,13 +124,12 @@ function CategorySelector({ category, options = [], selected, onSelect, delay })
   );
 }
 
-/* ── Budget pill ── */
-function BudgetPill({ label }) {
-  const [active, setActive] = React.useState(false);
+/* ── Budget pill (single-select) ── */
+function BudgetPill({ label, active, onClick }) {
   return (
     <button
       type="button"
-      onClick={() => setActive(p => !p)}
+      onClick={onClick}
       style={{
         background: active
           ? 'linear-gradient(135deg, rgba(255,107,157,0.2), rgba(192,132,252,0.15))'
@@ -146,6 +146,90 @@ function BudgetPill({ label }) {
     >
       {label}
     </button>
+  );
+}
+
+/* ── Product card ── */
+function ProductCard({ product }) {
+  const hasUrl = product.url && product.url !== '#';
+
+  function handleClick(e) {
+    e.stopPropagation();
+    if (hasUrl) window.open(product.url, '_blank', 'noopener,noreferrer');
+  }
+
+  return (
+    <motion.div
+      onClick={handleClick}
+      whileHover={{ y: -2, boxShadow: '0 4px 20px rgba(255,107,157,0.12)' }}
+      style={{
+        background: 'rgba(255,255,255,0.03)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: 10, overflow: 'hidden',
+        transition: 'border-color 0.2s',
+        cursor: hasUrl ? 'pointer' : 'default',
+      }}
+    >
+      {/* Product image */}
+      <div style={{
+        width: '100%', height: 110,
+        background: 'rgba(255,255,255,0.04)',
+        overflow: 'hidden', position: 'relative',
+      }}>
+        {product.image ? (
+          <img
+            src={product.image}
+            alt={product.title}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            onError={e => { e.target.style.display = 'none'; }}
+          />
+        ) : (
+          <div style={{
+            width: '100%', height: '100%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <ShoppingBag size={24} strokeWidth={1} style={{ color: 'var(--text-3)' }} />
+          </div>
+        )}
+        {hasUrl && (
+          <div style={{
+            position: 'absolute', inset: 0,
+            background: 'linear-gradient(to bottom, transparent 60%, rgba(0,0,0,0.5))',
+            display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end',
+            padding: '0.375rem',
+          }}>
+            <ExternalLink size={11} strokeWidth={2} style={{ color: 'rgba(255,255,255,0.6)' }} />
+          </div>
+        )}
+      </div>
+      {/* Info */}
+      <div style={{ padding: '0.5rem 0.625rem' }}>
+        <p style={{
+          fontSize: '0.625rem', fontWeight: 600, color: 'var(--text)', lineHeight: 1.35,
+          fontFamily: 'var(--font)', marginBottom: '0.25rem',
+          overflow: 'hidden', display: '-webkit-box',
+          WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+        }}>
+          {product.title}
+        </p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <span style={{
+            fontSize: '0.6875rem', fontWeight: 700, color: 'var(--accent)',
+            fontFamily: 'var(--font)',
+          }}>
+            {product.price || '—'}
+          </span>
+          {product.store && (
+            <span style={{
+              fontSize: '0.5rem', color: 'var(--text-3)', fontFamily: 'var(--font)',
+              letterSpacing: '0.04em', textTransform: 'uppercase',
+            }}>
+              {product.store}
+            </span>
+          )}
+        </div>
+      </div>
+    </motion.div>
   );
 }
 
@@ -194,11 +278,28 @@ function Section({ title, children, delay = 0 }) {
   );
 }
 
+const BUDGETS = ['₹2,000', '₹5,000', '₹10,000', '₹20,000+'];
+
 /* ── Final assembled outfit view ── */
 function FinalOutfit({ selections, data, gender, onReselect }) {
   const [imageUrl, setImageUrl] = useState(null);
   const [imgLoading, setImgLoading] = useState(false);
   const [imgError, setImgError] = useState(null);
+  const [activeBudget, setActiveBudget] = useState(null);
+  const [shopResults, setShopResults] = useState({});
+  const [shopLoading, setShopLoading] = useState(false);
+  const [shopError, setShopError] = useState(null);
+
+  useEffect(() => {
+    if (!activeBudget) return;
+    setShopLoading(true);
+    setShopError(null);
+    setShopResults({});
+    searchAllCategories(selections, activeBudget)
+      .then(results => setShopResults(results))
+      .catch(err => setShopError(err.message))
+      .finally(() => setShopLoading(false));
+  }, [activeBudget]);
 
   async function handleVisualize() {
     setImgLoading(true);
@@ -426,10 +527,60 @@ function FinalOutfit({ selections, data, gender, onReselect }) {
           ✦ Find Similar Pieces
         </p>
         <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
-          {['₹2,000', '₹5,000', '₹10,000', '₹20,000+'].map((b) => (
-            <BudgetPill key={b} label={b} />
+          {BUDGETS.map((b) => (
+            <BudgetPill
+              key={b} label={b}
+              active={activeBudget === b}
+              onClick={() => setActiveBudget(prev => prev === b ? null : b)}
+            />
           ))}
         </div>
+
+        {/* Product results */}
+        <AnimatePresence>
+          {activeBudget && (
+            <motion.div
+              key="shop-results"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.3 }}
+              style={{ overflow: 'hidden', marginTop: '0.875rem' }}
+            >
+              {shopLoading ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0' }}>
+                  <Loader2 size={14} strokeWidth={2} style={{ animation: 'spin 0.8s linear infinite', color: 'var(--text-3)' }} />
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-3)', fontFamily: 'var(--font)' }}>
+                    Searching for products…
+                  </span>
+                </div>
+              ) : shopError ? (
+                <p style={{ fontSize: '0.75rem', color: 'rgba(255,100,100,0.8)', fontFamily: 'var(--font)', padding: '0.25rem 0' }}>
+                  {shopError}
+                </p>
+              ) : (
+                Object.entries(shopResults).map(([cat, products]) =>
+                  products.length > 0 && (
+                    <div key={cat} style={{ marginBottom: '0.875rem' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', marginBottom: '0.4rem' }}>
+                        <span style={{ color: 'var(--text-3)' }}>{CLOTHING_ICONS[cat]}</span>
+                        <span style={{
+                          fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.15em',
+                          textTransform: 'uppercase', color: 'var(--text-3)', fontFamily: 'var(--font)',
+                        }}>
+                          {CATEGORY_LABELS[cat]}
+                        </span>
+                      </div>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
+                        {products.map((p, i) => <ProductCard key={i} product={p} />)}
+                      </div>
+                    </div>
+                  )
+                )
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
 
       {/* Action buttons */}
