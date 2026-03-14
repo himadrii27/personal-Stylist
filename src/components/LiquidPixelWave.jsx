@@ -1,9 +1,9 @@
 import React, { useRef, useEffect, useState } from 'react';
 
 const WAVES = [
-  { amplitude: 40, frequency: 0.008, speed: 0.0008, offsetY: 0.75, opacity: 0.12, color: '#0066ff' },
-  { amplitude: 60, frequency: 0.006, speed: 0.0005, offsetY: 0.82, opacity: 0.08, color: '#0066ff' },
-  { amplitude: 35, frequency: 0.01, speed: 0.001, offsetY: 0.88, opacity: 0.06, color: '#0066ff' },
+  { amplitude: 40, frequency: 0.008, speed: 0.0008, offsetY: 0.75, opacity: 0.10, color: '#FF6B9D' },
+  { amplitude: 60, frequency: 0.006, speed: 0.0005, offsetY: 0.82, opacity: 0.07, color: '#C084FC' },
+  { amplitude: 35, frequency: 0.01,  speed: 0.001,  offsetY: 0.88, opacity: 0.05, color: '#FF6B9D' },
 ];
 
 /**
@@ -93,8 +93,8 @@ function LiquidPixelWave({ className = '', style = {} }) {
           position: 'absolute',
           inset: 0,
           backgroundImage: `
-            linear-gradient(rgba(0,102,255,0.025) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0,102,255,0.025) 1px, transparent 1px)
+            linear-gradient(rgba(255,107,157,0.025) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,107,157,0.025) 1px, transparent 1px)
           `,
           backgroundSize: '20px 20px',
           opacity: 0.7,

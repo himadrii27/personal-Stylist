@@ -22,3 +22,43 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Keys & credentials
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+service-account*.json
+*credentials*.json
+*secret*.json
+secrets/
+.secrets/
+
+# Claude / AI config (may contain tokens)
+.claude.json
+
+# Captured screenshots (debug / Playwright)
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+# Allow intentional assets
+!public/**/*.png
+!public/**/*.jpg
+!public/**/*.jpeg
+!public/**/*.webp
+!public/**/*.gif
+!src/assets/**/*.png
+!src/assets/**/*.jpg
+!src/assets/**/*.jpeg
+!src/assets/**/*.webp
