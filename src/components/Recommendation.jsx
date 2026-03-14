@@ -1,9 +1,17 @@
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence, useMotionValue, useMotionTemplate } from 'framer-motion';
+import { Shirt, Layers, Wind, Footprints } from 'lucide-react';
 import { RippleButton } from './ui/ripple-button';
 import { generateOutfitImage } from '../utils/geminiService';
 
-const CLOTHING_ICONS = { top: '👕', bottom: '👖', outerwear: '🧥', footwear: '👟' };
+const serif = '"Cormorant Garant", Georgia, serif';
+
+const CLOTHING_ICONS = {
+  top:       <Shirt      size={15} strokeWidth={1.5} />,
+  bottom:    <Layers     size={15} strokeWidth={1.5} />,
+  outerwear: <Wind       size={15} strokeWidth={1.5} />,
+  footwear:  <Footprints size={15} strokeWidth={1.5} />,
+};
 const CATEGORY_LABELS = { top: 'Top', bottom: 'Bottom', outerwear: 'Outerwear', footwear: 'Footwear' };
 const CATEGORIES = ['top', 'bottom', 'outerwear', 'footwear'];
 
@@ -36,13 +44,15 @@ function SpotlightCard({ selected, onClick, children, accentColor = 'rgba(255,10
         cursor: 'pointer',
         borderRadius: 'var(--radius-sm)',
         border: selected
-          ? '1.5px solid rgba(255,107,157,0.7)'
+          ? '1.5px solid rgba(255,107,157,0.65)'
           : '1px solid var(--border)',
         background: selected
-          ? 'rgba(255,107,157,0.08)'
+          ? 'linear-gradient(var(--surface), var(--surface)) padding-box, linear-gradient(135deg, rgba(255,107,157,0.65), rgba(192,132,252,0.55)) border-box'
           : 'rgba(255,255,255,0.025)',
         padding: '0.9rem 1rem',
-        boxShadow: selected ? '0 0 18px rgba(255,107,157,0.15)' : 'none',
+        boxShadow: selected
+          ? '0 0 22px rgba(255,107,157,0.2), inset 0 0 24px rgba(255,107,157,0.04)'
+          : 'none',
         transition: 'border-color 0.2s, box-shadow 0.2s, background 0.2s',
       }}
     >
@@ -77,13 +87,17 @@ function CategorySelector({ category, options = [], selected, onSelect, delay })
       transition={{ delay, duration: 0.3 }}
       style={{ marginBottom: '1.25rem' }}
     >
-      <p style={{
-        fontSize: '0.625rem', color: 'var(--accent)',
-        textTransform: 'uppercase', letterSpacing: '0.12em',
-        fontWeight: 600, marginBottom: '0.6rem',
-      }}>
-        {CLOTHING_ICONS[category]} {CATEGORY_LABELS[category]}
-      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.6rem' }}>
+        <span style={{ fontSize: '0.75rem' }}>{CLOTHING_ICONS[category]}</span>
+        <span style={{
+          fontSize: '0.6rem', color: 'var(--accent)',
+          textTransform: 'uppercase', letterSpacing: '0.16em',
+          fontWeight: 700, fontFamily: 'var(--font)',
+        }}>
+          {CATEGORY_LABELS[category]}
+        </span>
+        <div style={{ flex: 1, height: '1px', background: 'linear-gradient(90deg, rgba(255,107,157,0.2), transparent)' }} />
+      </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.6rem' }}>
         {options.map((opt, i) => (
           <SpotlightCard
@@ -92,13 +106,13 @@ function CategorySelector({ category, options = [], selected, onSelect, delay })
             onClick={() => onSelect(opt)}
           >
             <p style={{
-              fontSize: '0.8rem', fontWeight: 700,
-              color: 'var(--text)', marginBottom: '0.25rem', lineHeight: 1.3,
+              fontFamily: serif, fontSize: '0.9375rem', fontWeight: 600,
+              color: 'var(--text)', marginBottom: '0.3rem', lineHeight: 1.25,
             }}>
               {opt.name}
             </p>
             <p style={{
-              fontSize: '0.7rem', color: 'var(--text-3)', lineHeight: 1.45,
+              fontSize: '0.6875rem', color: 'var(--text-3)', lineHeight: 1.5,
             }}>
               {opt.description}
             </p>
@@ -106,6 +120,32 @@ function CategorySelector({ category, options = [], selected, onSelect, delay })
         ))}
       </div>
     </motion.div>
+  );
+}
+
+/* ── Budget pill ── */
+function BudgetPill({ label }) {
+  const [active, setActive] = React.useState(false);
+  return (
+    <button
+      type="button"
+      onClick={() => setActive(p => !p)}
+      style={{
+        background: active
+          ? 'linear-gradient(135deg, rgba(255,107,157,0.2), rgba(192,132,252,0.15))'
+          : 'rgba(255,255,255,0.04)',
+        border: active ? '1px solid rgba(255,107,157,0.5)' : '1px solid rgba(255,255,255,0.08)',
+        color: active ? 'var(--text)' : 'var(--text-2)',
+        borderRadius: 999,
+        padding: '0.3rem 0.75rem',
+        fontSize: '0.75rem', fontWeight: 600,
+        fontFamily: 'var(--font)', cursor: 'pointer',
+        boxShadow: active ? '0 0 12px rgba(255,107,157,0.15)' : 'none',
+        transition: 'all 0.2s',
+      }}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -194,8 +234,8 @@ function FinalOutfit({ selections, data, gender, onReselect }) {
       <div style={{ marginBottom: '1.25rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem' }}>
           <h3 style={{
-            fontSize: '1rem', textTransform: 'uppercase',
-            letterSpacing: '0.08em', fontWeight: 700,
+            fontFamily: serif, fontSize: '1.5rem', fontWeight: 600,
+            letterSpacing: '0.02em',
           }}>
             <span className="gradient-text">{data.outfit_name || 'Your Look'}</span>
           </h3>
@@ -365,6 +405,33 @@ function FinalOutfit({ selections, data, gender, onReselect }) {
         )}
       </AnimatePresence>
 
+      {/* Budget shopping */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+        style={{
+          background: 'rgba(255,255,255,0.025)',
+          border: '1px solid rgba(255,255,255,0.07)',
+          borderRadius: 10, padding: '0.875rem 1rem',
+          marginBottom: '1rem',
+        }}
+      >
+        <p style={{
+          fontSize: '0.6rem', fontWeight: 700,
+          letterSpacing: '0.16em', textTransform: 'uppercase',
+          color: 'var(--accent)', marginBottom: '0.625rem',
+          fontFamily: 'var(--font)',
+        }}>
+          ✦ Find Similar Pieces
+        </p>
+        <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+          {['₹2,000', '₹5,000', '₹10,000', '₹20,000+'].map((b) => (
+            <BudgetPill key={b} label={b} />
+          ))}
+        </div>
+      </motion.div>
+
       {/* Action buttons */}
       <div style={{ display: 'flex', gap: '0.75rem' }}>
         <RippleButton
@@ -448,8 +515,8 @@ function Recommendation({ data }) {
             <div style={{ marginBottom: '1.5rem' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.4rem' }}>
                 <h3 style={{
-                  fontSize: '1rem', textTransform: 'uppercase',
-                  letterSpacing: '0.08em', fontWeight: 700,
+                  fontFamily: serif, fontSize: '1.5rem', fontWeight: 600,
+                  letterSpacing: '0.02em', textTransform: 'none',
                 }}>
                   <span className="gradient-text">{outfit_name || 'Build Your Look'}</span>
                 </h3>
@@ -472,22 +539,49 @@ function Recommendation({ data }) {
               />
             ))}
 
-            {/* Progress + CTA */}
+            {/* Live selection summary + CTA */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
               style={{ marginTop: '1.25rem' }}
             >
-              {/* Progress dots */}
-              <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center', marginBottom: '0.875rem' }}>
+              {/* Outfit summary row */}
+              <div style={{
+                background: 'rgba(255,255,255,0.025)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                borderRadius: 10, padding: '0.75rem 1rem',
+                marginBottom: '0.875rem',
+                display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem',
+              }}>
                 {CATEGORIES.map((cat) => (
-                  <div key={cat} style={{
-                    width: 8, height: 8, borderRadius: '50%',
-                    background: selections[cat] ? 'var(--accent)' : 'rgba(255,255,255,0.12)',
-                    transition: 'background 0.25s',
-                    boxShadow: selections[cat] ? '0 0 6px rgba(255,107,157,0.5)' : 'none',
-                  }} />
+                  <div key={cat} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', alignItems: 'center' }}>
+                    <span style={{ fontSize: '0.875rem' }}>{CLOTHING_ICONS[cat]}</span>
+                    <AnimatePresence mode="wait">
+                      {selections[cat] ? (
+                        <motion.span
+                          key="sel"
+                          initial={{ opacity: 0, y: 4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -4 }}
+                          style={{
+                            fontSize: '0.5625rem', fontWeight: 700, color: 'var(--accent)',
+                            fontFamily: serif, textAlign: 'center', lineHeight: 1.3,
+                            maxWidth: '100%', overflow: 'hidden',
+                            display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                          }}
+                        >
+                          {selections[cat].name.split(' ').slice(0, 3).join(' ')}
+                        </motion.span>
+                      ) : (
+                        <motion.span
+                          key="empty"
+                          initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                          style={{ fontSize: '0.5625rem', color: 'var(--text-3)', fontFamily: 'var(--font)' }}
+                        >—</motion.span>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 ))}
               </div>
 

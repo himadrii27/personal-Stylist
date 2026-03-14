@@ -19,6 +19,9 @@ Safe ↔ Experimental: {{safe_experimental}}
 
 Generation: {{generation}}
 Gender Expression: {{gender}}
+Clothing Gender: {{clothing_gender}}
+Style Energy: {{style_energy}}
+Color Mood: {{color_mood}}
 
 EVENT DETAILS
 
@@ -91,6 +94,7 @@ Return the response in JSON format:
 GUIDELINES
 
 clothing_options:
+CRITICAL: All clothing items MUST be appropriate for the Clothing Gender specified above. If Clothing Gender is "Men's", recommend men's clothing only (shirts, trousers, suits, etc). If "Women's", recommend women's clothing only. Never mix genders.
 For EACH category (top, bottom, outerwear, footwear), provide exactly 3 distinct options that all match the user's style and the event. Options should vary in style intensity — one safe, one balanced, one bold.
 
 Mandatory Accessories:
@@ -115,8 +119,14 @@ function describeSlider(value, lowLabel, highLabel) {
   return `${value}/100 — strongly ${highLabel}`;
 }
 
+function genderToClothingLabel(gender) {
+  if (gender === 'Masculine') return "Men's";
+  if (gender === 'Feminine') return "Women's";
+  return 'Unisex/Gender-neutral';
+}
+
 function buildPrompt({ sliders, age, gender }, occasionData) {
-  const { occasion, time, weather, location, venue, artist } = occasionData;
+  const { occasion, time, weather, location, venue, artist, styleEnergy, colorMood } = occasionData;
 
   return PROMPT_TEMPLATE
     .replace('{{minimal_loud}}',      describeSlider(sliders.minimalLoud,      'Minimal',  'Loud'))
@@ -124,14 +134,17 @@ function buildPrompt({ sliders, age, gender }, occasionData) {
     .replace('{{classic_trendy}}',    describeSlider(sliders.classicTrendy,    'Classic',  'Trendy'))
     .replace('{{sporty_polished}}',   describeSlider(sliders.sportyPolished,   'Sporty',   'Polished'))
     .replace('{{safe_experimental}}', describeSlider(sliders.safeExperimental, 'Safe',     'Experimental'))
-    .replace('{{generation}}',   age || 'Millennial')
-    .replace('{{gender}}',       gender || 'Unisex')
-    .replace('{{occasion}}',     occasion || 'Casual outing')
-    .replace('{{time_of_day}}',  time || 'Day')
-    .replace('{{weather}}',      weather || 'Sunny')
-    .replace('{{location}}',     location || 'Not specified')
-    .replace('{{venue}}',        venue || 'Not specified')
-    .replace('{{artist_theme}}', artist || 'None');
+    .replace('{{generation}}',      age || 'Millennial')
+    .replace('{{gender}}',          gender || 'Unisex')
+    .replace('{{clothing_gender}}', genderToClothingLabel(gender))
+    .replace('{{style_energy}}',    styleEnergy || 'Not specified')
+    .replace('{{color_mood}}',      colorMood || 'Not specified')
+    .replace('{{occasion}}',        occasion || 'Casual outing')
+    .replace('{{time_of_day}}',     time || 'Day')
+    .replace('{{weather}}',         weather || 'Sunny')
+    .replace('{{location}}',        location || 'Not specified')
+    .replace('{{venue}}',           venue || 'Not specified')
+    .replace('{{artist_theme}}',    artist || 'None');
 }
 
 export async function getGeminiOutfit(userPrefs, occasionData) {
@@ -186,7 +199,7 @@ export async function generateOutfitImage(selections, gender) {
     throw new Error('Gemini API key not configured.');
   }
 
-  const genderDesc = gender === 'F' ? 'woman' : gender === 'M' ? 'man' : 'person';
+  const genderDesc = gender === 'Feminine' ? 'woman' : gender === 'Masculine' ? 'man' : 'person';
   const outfitParts = [
     selections.top       && `top: ${selections.top}`,
     selections.bottom    && `bottom: ${selections.bottom}`,

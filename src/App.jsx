@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import LiquidPixelWave from './components/LiquidPixelWave';
-import InteractiveHero3D from './components/InteractiveHero3D';
 import CurrentVibeCard from './components/CurrentVibeCard';
 import Preferences from './components/Preferences';
 import OccasionForm from './components/OccasionForm';
 import Recommendation from './components/Recommendation';
+import HomePage from './components/HomePage';
 import { getGeminiOutfit } from './utils/geminiService';
 
 const pageVariants = {
@@ -17,6 +17,8 @@ const pageVariants = {
 const stagger = { animate: { transition: { staggerChildren: 0.06 } } };
 
 function App() {
+  const [appStarted, setAppStarted] = useState(false);
+
   const [userPrefs, setUserPrefs] = useState(() => {
     const saved = localStorage.getItem('personalStylistPrefs');
     if (!saved) return null;
@@ -52,14 +54,46 @@ function App() {
     }
   };
 
-  const scrollToMain = () => {
-    document.getElementById('main-content')?.scrollIntoView({ behavior: 'smooth' });
-  };
+  if (!appStarted) {
+    return <HomePage onGetStarted={() => setAppStarted(true)} />;
+  }
 
   return (
     <>
-      <InteractiveHero3D onCtaClick={scrollToMain} />
-      <section id="main-content" style={{ position: 'relative' }}>
+      {/* App sticky nav */}
+      <nav style={{
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
+        background: 'rgba(8,8,8,0.88)', backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(255,255,255,0.07)',
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 2rem', height: 56,
+      }}>
+        <button
+          onClick={() => { setAppStarted(false); setRecommendation(null); setError(null); }}
+          style={{
+            background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
+            color: 'rgba(240,240,240,0.5)', fontSize: '0.8125rem',
+            fontFamily: 'var(--font)', padding: '0.375rem 0.875rem',
+            borderRadius: 7, cursor: 'pointer', letterSpacing: '0.01em',
+            transition: 'color 0.2s, border-color 0.2s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'rgba(240,240,240,0.9)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(240,240,240,0.5)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+        >
+          ← Home
+        </button>
+        <span style={{
+          fontFamily: '"Cormorant Garant", Georgia, serif',
+          fontSize: '1.1rem', fontWeight: 600, color: '#e8e2d5',
+          letterSpacing: '0.01em',
+        }}>
+          Personal Stylist
+        </span>
+        <div style={{ width: 80 }} />
+      </nav>
+
+      <section id="main-content" style={{ position: 'relative', paddingTop: 56 }}>
         <LiquidPixelWave />
         <div className="app-container" style={{ position: 'relative', zIndex: 1 }}>
           <AnimatePresence mode="wait">

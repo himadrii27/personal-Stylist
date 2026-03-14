@@ -18,6 +18,7 @@
 @keyframes meteor-fall   { 0% { transform: rotate(215deg) translateX(0); opacity: 1; } 70% { opacity: 1; } 100% { transform: rotate(215deg) translateX(-700px); opacity: 0; } }
 @keyframes ripple-expand { to { transform: scale(4); opacity: 0; } }
 @keyframes lens-pop      { from { transform: scale(0.5) rotate(-5deg); opacity: 0; } to { transform: scale(1) rotate(0deg); opacity: 1; } }
+@keyframes spin          { to { transform: rotate(360deg); } }
 
 /* ── Design tokens ──────────────────────────────────────────────── */
 :root {
