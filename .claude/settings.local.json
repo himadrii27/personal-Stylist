@@ -14,7 +14,11 @@
       "mcp__playwright__browser_network_requests",
       "WebSearch",
       "WebFetch(domain:github.com)",
-      "Bash(claude mcp add stitch -- npx @_davideast/stitch-mcp proxy)"
+      "Bash(claude mcp add stitch -- npx @_davideast/stitch-mcp proxy)",
+      "mcp__magicuidesign-mcp__getUIComponents",
+      "mcp__playwright__browser_install",
+      "Bash(lsof -ti:5173)",
+      "Bash(pkill -x \"Google Chrome\")"
     ]
   }
 }

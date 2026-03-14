@@ -48,8 +48,10 @@ Return the response in JSON format:
 {
   "outfit_name": "",
   "outfit_description": "",
+  "style_tags": ["", "", "", ""],
   "clothing_options": {
     "top": [
+      { "name": "", "description": "" },
       { "name": "", "description": "" },
       { "name": "", "description": "" },
       { "name": "", "description": "" }
@@ -57,14 +59,17 @@ Return the response in JSON format:
     "bottom": [
       { "name": "", "description": "" },
       { "name": "", "description": "" },
+      { "name": "", "description": "" },
       { "name": "", "description": "" }
     ],
     "outerwear": [
       { "name": "", "description": "" },
       { "name": "", "description": "" },
+      { "name": "", "description": "" },
       { "name": "", "description": "" }
     ],
     "footwear": [
+      { "name": "", "description": "" },
       { "name": "", "description": "" },
       { "name": "", "description": "" },
       { "name": "", "description": "" }
@@ -95,7 +100,7 @@ GUIDELINES
 
 clothing_options:
 CRITICAL: All clothing items MUST be appropriate for the Clothing Gender specified above. If Clothing Gender is "Men's", recommend men's clothing only (shirts, trousers, suits, etc). If "Women's", recommend women's clothing only. Never mix genders.
-For EACH category (top, bottom, outerwear, footwear), provide exactly 3 distinct options that all match the user's style and the event. Options should vary in style intensity — one safe, one balanced, one bold.
+For EACH category (top, bottom, outerwear, footwear), provide exactly 4 distinct options that all match the user's style and the event. Options should vary in style intensity — one safe, one balanced, one bold, one editorial/avant-garde.
 
 Mandatory Accessories:
 Items that elevate the outfit and match the event vibe.
@@ -105,6 +110,9 @@ Describe how most people at this event/location typically dress.
 
 Mandatory Survival Items:
 Practical items needed for the environment (e.g. earplugs, portable charger, water bottle, jacket, etc).
+
+Style Tags:
+3–5 short aesthetic tags (2–3 words max each) that capture the DNA of this outfit. Examples: Earth Tone, Rave Ready, Layered Look, Bold Silhouette, Street-Luxe, Dark Romantic.
 
 Stylist Tip:
 Provide one short insider fashion tip.
@@ -156,7 +164,7 @@ export async function getGeminiOutfit(userPrefs, occasionData) {
   const prompt = buildPrompt(userPrefs, occasionData);
   const body = JSON.stringify({
     contents: [{ parts: [{ text: prompt }] }],
-    generationConfig: { temperature: 0.8, topK: 40, topP: 0.95, maxOutputTokens: 4096, responseMimeType: 'application/json' },
+    generationConfig: { temperature: 0.8, topK: 40, topP: 0.95, maxOutputTokens: 8192, responseMimeType: 'application/json' },
   });
 
   let lastError;
@@ -171,6 +179,7 @@ export async function getGeminiOutfit(userPrefs, occasionData) {
     if (!response.ok) {
       const err = await response.json().catch(() => ({}));
       const msg = err?.error?.message || `Gemini API error ${response.status}`;
+      console.error(`[Gemini] ${model} HTTP ${response.status}:`, msg, err);
       // If quota exceeded, try next model; otherwise throw immediately
       if (msg.toLowerCase().includes('quota') || response.status === 429) {
         lastError = new Error(`${model}: quota exceeded — billing not yet active on your Google Cloud project. Enable billing at console.cloud.google.com.`);
@@ -180,12 +189,18 @@ export async function getGeminiOutfit(userPrefs, occasionData) {
     }
 
     const data = await response.json();
+    console.log(`[Gemini] ${model} raw response:`, data);
     const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error('No response from Gemini.');
+    if (!text) {
+      console.error(`[Gemini] ${model} no text in response:`, JSON.stringify(data));
+      throw new Error('No response from Gemini.');
+    }
 
     try {
-      return JSON.parse(text);
-    } catch {
+      const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
+      return JSON.parse(clean);
+    } catch (parseErr) {
+      console.error(`[Gemini] ${model} JSON parse failed. Raw text:`, text);
       throw new Error('Gemini returned invalid JSON. Please try again.');
     }
   }

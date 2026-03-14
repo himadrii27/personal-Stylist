@@ -158,7 +158,7 @@ function HeroSection({ onGetStarted }) {
             color: C.text, marginBottom: '1.75rem',
           }}>
             <span style={{ display: 'block', fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontStyle: 'italic', fontWeight: 400 }}>
-              Your AI
+              Your
             </span>
             <span style={{ display: 'block', fontSize: 'clamp(3rem, 6.5vw, 5.5rem)', fontWeight: 700 }}>
               Personal Stylist

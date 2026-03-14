@@ -14,8 +14,6 @@ const pageVariants = {
   exit: { opacity: 0, y: -8 }
 };
 
-const stagger = { animate: { transition: { staggerChildren: 0.06 } } };
-
 function App() {
   const [appStarted, setAppStarted] = useState(false);
 
@@ -31,6 +29,7 @@ function App() {
   });
 
   const [recommendation, setRecommendation] = useState(null);
+  const [view, setView] = useState('form'); // 'form' | 'recommendation'
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -47,7 +46,9 @@ function App() {
     try {
       const result = await getGeminiOutfit(userPrefs, occasionData);
       setRecommendation({ ...result, gender: userPrefs.gender });
+      setView('recommendation');
     } catch (err) {
+      console.error('[Stylist] generateRecommendation failed:', err);
       setError(err.message);
     } finally {
       setIsLoading(false);
@@ -57,6 +58,14 @@ function App() {
   if (!appStarted) {
     return <HomePage onGetStarted={() => setAppStarted(true)} />;
   }
+
+  const navBtnStyle = {
+    background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
+    color: 'rgba(240,240,240,0.5)', fontSize: '0.8125rem',
+    fontFamily: 'var(--font)', padding: '0.375rem 0.875rem',
+    borderRadius: 7, cursor: 'pointer', letterSpacing: '0.01em',
+    transition: 'color 0.2s, border-color 0.2s', boxShadow: 'none',
+  };
 
   return (
     <>
@@ -70,14 +79,8 @@ function App() {
         padding: '0 2rem', height: 56,
       }}>
         <button
-          onClick={() => { setAppStarted(false); setRecommendation(null); setError(null); }}
-          style={{
-            background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
-            color: 'rgba(240,240,240,0.5)', fontSize: '0.8125rem',
-            fontFamily: 'var(--font)', padding: '0.375rem 0.875rem',
-            borderRadius: 7, cursor: 'pointer', letterSpacing: '0.01em',
-            transition: 'color 0.2s, border-color 0.2s',
-          }}
+          onClick={() => { setAppStarted(false); setRecommendation(null); setView('form'); setError(null); }}
+          style={navBtnStyle}
           onMouseEnter={e => { e.currentTarget.style.color = 'rgba(240,240,240,0.9)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)'; }}
           onMouseLeave={e => { e.currentTarget.style.color = 'rgba(240,240,240,0.5)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
         >
@@ -90,74 +93,120 @@ function App() {
         }}>
           Personal Stylist
         </span>
-        <div style={{ width: 80 }} />
+        {view === 'recommendation' ? (
+          <button
+            onClick={() => setView('form')}
+            style={navBtnStyle}
+            onMouseEnter={e => { e.currentTarget.style.color = 'rgba(240,240,240,0.9)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(240,240,240,0.5)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+          >
+            ← Back
+          </button>
+        ) : recommendation ? (
+          <button
+            onClick={() => setView('recommendation')}
+            style={navBtnStyle}
+            onMouseEnter={e => { e.currentTarget.style.color = 'rgba(240,240,240,0.9)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(240,240,240,0.5)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
+          >
+            Resume Look →
+          </button>
+        ) : (
+          <div style={{ width: 80 }} />
+        )}
       </nav>
 
-      <section id="main-content" style={{ position: 'relative', paddingTop: 56 }}>
-        <LiquidPixelWave />
-        <div className="app-container" style={{ position: 'relative', zIndex: 1 }}>
+      <section id="main-content" style={{ position: 'relative', paddingTop: 56, overflow: view === 'recommendation' ? 'hidden' : 'visible' }}>
+        {view !== 'recommendation' && <LiquidPixelWave />}
+        <div className="app-container" style={{ position: 'relative', zIndex: 1, padding: view === 'recommendation' ? 0 : undefined }}>
           <AnimatePresence mode="wait">
             {!userPrefs ? (
               <motion.div key="prefs" variants={pageVariants} initial="initial" animate="animate" exit="exit">
                 <Preferences onSave={setUserPrefs} />
               </motion.div>
-            ) : (
+
+            ) : view === 'form' && !isLoading && !error ? (
               <motion.div
-                key="main"
+                key="form"
+                variants={pageVariants}
                 initial="initial"
                 animate="animate"
                 exit="exit"
-                variants={stagger}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: (recommendation || isLoading || error) ? '1fr 1fr' : '1fr',
-                  gap: '2rem',
-                  alignItems: 'start',
-                }}
+                style={{ maxWidth: 660, margin: '0 auto' }}
               >
-                <motion.section variants={pageVariants}>
-                  <CurrentVibeCard userPrefs={userPrefs} onEditProfile={() => { setUserPrefs(null); setRecommendation(null); }}>
-                    <OccasionForm onSubmit={generateRecommendation} isLoading={isLoading} />
-                  </CurrentVibeCard>
-                </motion.section>
+                {/* Resume banner — shown when a saved look exists */}
+                {recommendation && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    style={{
+                      marginBottom: '0.875rem',
+                      padding: '0.625rem 1rem',
+                      background: 'rgba(201,185,154,0.05)',
+                      border: '1px solid rgba(201,185,154,0.13)',
+                      borderRadius: 9,
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                    }}
+                  >
+                    <div>
+                      <p style={{ fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(201,185,154,0.45)', fontFamily: 'var(--font)', marginBottom: '0.15rem' }}>
+                        Saved Look
+                      </p>
+                      <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#e8e2d5', fontFamily: '"Cormorant Garant", Georgia, serif', fontStyle: 'italic' }}>
+                        {recommendation.outfit_name}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => setView('recommendation')}
+                      style={{
+                        background: 'rgba(201,185,154,0.09)', border: '1px solid rgba(201,185,154,0.2)',
+                        color: '#c9b99a', borderRadius: 7, padding: '0.35rem 0.75rem',
+                        fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
+                        fontFamily: 'var(--font)', letterSpacing: '0.03em', boxShadow: 'none',
+                      }}
+                    >
+                      Resume →
+                    </button>
+                  </motion.div>
+                )}
+                <CurrentVibeCard userPrefs={userPrefs} onEditProfile={() => { setUserPrefs(null); setRecommendation(null); setView('form'); }}>
+                  <OccasionForm onSubmit={generateRecommendation} isLoading={isLoading} />
+                </CurrentVibeCard>
+              </motion.div>
 
-                <AnimatePresence mode="wait">
-                  {isLoading && (
-                    <motion.section
-                      key="loading"
-                      variants={pageVariants}
-                      initial={{ opacity: 0, x: 16 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -16 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <GeminiLoadingCard />
-                    </motion.section>
-                  )}
-                  {error && !isLoading && (
-                    <motion.section
-                      key="error"
-                      variants={pageVariants}
-                      initial={{ opacity: 0, x: 16 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <ErrorCard message={error} onRetry={() => setError(null)} />
-                    </motion.section>
-                  )}
-                  {recommendation && !isLoading && (
-                    <motion.section
-                      key="recommendation"
-                      initial={{ opacity: 0, x: 16 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.35, delay: 0.1 }}
-                    >
-                      <Recommendation data={recommendation} />
-                    </motion.section>
-                  )}
-                </AnimatePresence>
+            ) : isLoading ? (
+              <motion.div
+                key="loading"
+                variants={pageVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                style={{ maxWidth: 480, margin: '4rem auto' }}
+              >
+                <GeminiLoadingCard />
+              </motion.div>
+
+            ) : error ? (
+              <motion.div
+                key="error"
+                variants={pageVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                style={{ maxWidth: 480, margin: '4rem auto' }}
+              >
+                <ErrorCard message={error} onRetry={() => setError(null)} />
+              </motion.div>
+
+            ) : (
+              <motion.div
+                key="recommendation"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Recommendation data={recommendation} />
               </motion.div>
             )}
           </AnimatePresence>
