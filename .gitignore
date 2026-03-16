@@ -45,6 +45,8 @@ secrets/
 
 # Claude / AI config (may contain tokens)
 .claude.json
+.claude/
+CLAUDE.md
 
 # Captured screenshots (debug / Playwright)
 *.png
