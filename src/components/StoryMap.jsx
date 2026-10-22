@@ -64,6 +64,9 @@ const STOPS = [
   { rail: '2011',  lon: -122.4, lat: 37.8, zoom: 2.4, year: '2011', place: 'Online',
     title: 'Data meets the stylist',
     copy: "Stitch Fix pairs algorithms with human stylists and posts curated clothes to customers' doors." },
+  { rail: '2020s', lon: 2.35,   lat: 48.9, zoom: 3.2, year: '2020s', place: 'Paris',
+    title: 'India on the world runway',
+    copy: "Manish Arora became the first Indian designer at Paris Fashion Week in 2007. Rahul Mishra joined the Paris Haute Couture calendar in 2020. In 2023 Dior brought its runway to Mumbai's Gateway of India, with embroidery by the city's Chanakya atelier." },
   { rail: 'Today', year: 'Today', place: 'Everywhere',
     title: 'A stylist for every event',
     copy: 'AI that knows the occasion, the weather and your budget. Not just for the red carpet.' },
@@ -73,8 +76,8 @@ const STOPS = [
   return { ...s, x, y };
 });
 
-const N = STOPS.length;          // 9 chapters
-const PIN_COUNT = N - 1;         // 8 cities; the last chapter is the zoom-out
+const N = STOPS.length;          // 10 chapters
+const PIN_COUNT = N - 1;         // 9 pins; the last chapter is the zoom-out
 
 // Curved arcs between consecutive cities (control point bowed "upward")
 const SEGMENTS = STOPS.slice(0, PIN_COUNT - 1).map((a, i) => {
@@ -404,7 +407,7 @@ function MapJourney({ onGetStarted }) {
   const gutter = 'clamp(1rem, 4vw, 2.5rem)';
 
   return (
-    <div ref={outerRef} className="hp-story-outer">
+    <div ref={outerRef} className="hp-story-outer" style={{ '--chapters': N }}>
       <div ref={stageRef} className="hp-story-stage" style={{ background: PAPER.sheet }}>
 
         {/* ── Live map (camera = animated viewBox) ── */}
@@ -656,7 +659,8 @@ function StaticStory({ onGetStarted }) {
               <path key={i} d={seg.d} fill="none" stroke={ACCENT} strokeWidth={2.4} strokeDasharray="7 6" />
             ))}
             {STOPS.slice(0, PIN_COUNT).map((s, i) => (
-              <g key={s.rail} transform={`translate(${s.x} ${s.y})`}>
+              // a city visited twice (Paris) gets its later badge nudged so both numbers read
+              <g key={s.rail} transform={`translate(${s.x + (STOPS.slice(0, i).some(o => o.x === s.x && o.y === s.y) ? 24 : 0)} ${s.y})`}>
                 <circle r={11} fill={ACCENT} stroke="#F9F7F4" strokeWidth={2} />
                 <text textAnchor="middle" dy="4" fontSize="11" fontFamily="Inter, sans-serif" fontWeight="700" fill="#fff">{i + 1}</text>
               </g>

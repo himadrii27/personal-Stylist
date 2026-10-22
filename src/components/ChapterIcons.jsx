@@ -141,6 +141,31 @@ function Delivery() {
   );
 }
 
+// 2020s Paris & Mumbai — a model walks the catwalk in an embroidered lehenga, cameras flash
+function Runway() {
+  return (
+    <Frame label="A model walking a runway in an embroidered outfit">
+      <path d="M30 60 L33 26 H39 L42 60" fill="#E4D9C4" stroke={INK} strokeWidth="1.6" strokeLinejoin="round" />
+      <motion.g style={{ originX: '36px', originY: '52px' }}
+        animate={{ y: [-8, 0, 0, -8], scale: [0.72, 1, 1, 0.72], opacity: [0, 1, 1, 0] }}
+        transition={loop(3, { times: [0, 0.45, 0.85, 1] })}>
+        <circle cx="36" cy="22" r="3.6" fill={INK} />
+        <path d="M33 27 H39 L40 35 H32 Z" fill={INK} />
+        <path d="M32 35 H40 L46 53 H26 Z" fill="#fff" stroke={INK} strokeWidth="2" strokeLinejoin="round" />
+        {[[31, 46], [36, 43], [41, 46], [33, 50], [39, 50]].map(([x, y], i) => (
+          <motion.circle key={i} cx={x} cy={y} r="1.5" fill={ACCENT}
+            animate={{ opacity: [0.3, 1, 0.3] }} transition={loop(1.1, { delay: i * 0.15 })} />
+        ))}
+      </motion.g>
+      {[[15, 30, 0], [57, 26, 0.7], [16, 46, 1.4], [56, 44, 2.1]].map(([x, y, delay]) => (
+        <motion.path key={`${x}-${y}`} d={`M${x} ${y - 4} l1.2 2.8 2.8 1.2 -2.8 1.2 -1.2 2.8 -1.2 -2.8 -2.8 -1.2 2.8 -1.2 z`} fill={ACCENT}
+          style={{ originX: `${x}px`, originY: `${y}px` }}
+          animate={{ opacity: [0, 1, 0], scale: [0.4, 1.2, 0.4] }} transition={loop(2.8, { delay, times: [0, 0.12, 0.3] })} />
+      ))}
+    </Frame>
+  );
+}
+
 // Today — a chat bubble turns into an outfit
 function Today() {
   return (
@@ -162,7 +187,7 @@ function Today() {
 
 const ICONS = {
   Darzi, '1858': Couture, '1909': Shopping, '1930s': Hollywood, '1960s': Editor,
-  '1983': Oscar, '1990s': Bollywood, '2011': Delivery, Today,
+  '1983': Oscar, '1990s': Bollywood, '2011': Delivery, '2020s': Runway, Today,
 };
 
 export default function ChapterIcon({ rail }) {

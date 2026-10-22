@@ -107,7 +107,7 @@
 
 
 /* Story map: pinned stage, one scroll slice per chapter */
-.hp-story-outer { position: relative; height: calc(9 * 80vh + 100vh); }
+.hp-story-outer { position: relative; height: calc(var(--chapters, 9) * 80vh + 100vh); }
 .hp-story-stage { position: sticky; top: 0; height: 100vh; height: 100svh; overflow: hidden; }
 .hp-rail        { overflow-x: auto; scrollbar-width: none; }
 .hp-rail::-webkit-scrollbar { display: none; }
@@ -181,7 +181,7 @@
 @media (max-width: 768px) {
   .hp-nav-links { display: none !important; }
   .hp-steps     { grid-template-columns: 1fr; }
-  .hp-story-outer   { height: calc(9 * 55vh + 100vh); }
+  .hp-story-outer   { height: calc(var(--chapters, 9) * 55vh + 100vh); }
 }
 
 /* ── Design tokens (app flow — ivory + orange, matches the homepage) ── */
