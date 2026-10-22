@@ -68,3 +68,4 @@ CLAUDE.md
 # segmentation eval data (VITON-HD, measurement only — not redistributed)
 eval/data/
 eval/models/
+.vercel
