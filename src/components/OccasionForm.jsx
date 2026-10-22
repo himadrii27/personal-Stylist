@@ -11,15 +11,15 @@ import { RippleButton } from './ui/ripple-button';
 
 /* ── Theme tokens ─────────────────────────────────────────────────── */
 const G = {
-  gold:       '#c9b99a',
-  goldMid:    'rgba(201,185,154,0.55)',
-  goldDim:    'rgba(201,185,154,0.35)',
-  goldFaint:  'rgba(201,185,154,0.07)',
-  goldBorder: 'rgba(201,185,154,0.15)',
-  text:       '#e8e2d5',
-  textDim:    'rgba(232,226,213,0.5)',
-  textFaint:  'rgba(232,226,213,0.25)',
-  serif:      '"Cormorant Garant", Georgia, serif',
+  gold:       '#E2571A',
+  goldMid:    'rgba(13,13,11,0.55)',
+  goldDim:    'rgba(13,13,11,0.4)',
+  goldFaint:  'rgba(43,38,32,0.08)',
+  goldBorder: 'rgba(43,38,32,0.17)',
+  text:       '#0d0d0b',
+  textDim:    'rgba(13,13,11,0.65)',
+  textFaint:  'rgba(13,13,11,0.4)',
+  serif:      '"Instrument Serif", Georgia, serif',
   sans:       '"Inter", -apple-system, sans-serif',
 };
 
@@ -103,11 +103,11 @@ function SelectChip({ Icon, label, selected, onClick }) {
       whileTap={{ scale: 0.96 }}
       style={{
         position: 'relative',
-        background: selected ? G.goldFaint : 'rgba(255,255,255,0.02)',
-        border: `1px solid ${selected ? G.goldBorder : 'rgba(255,255,255,0.07)'}`,
+        background: selected ? G.goldFaint : 'rgba(43,38,32,0.02)',
+        border: `1px solid ${selected ? G.goldBorder : 'rgba(43,38,32,0.07)'}`,
         borderRadius: 9, padding: '0.5rem 0.625rem', cursor: 'pointer',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.3rem',
-        boxShadow: selected ? `0 0 16px rgba(201,185,154,0.1)` : 'none',
+        boxShadow: selected ? `0 0 16px rgba(43,38,32,0.11)` : 'none',
         transition: 'all 0.2s', minWidth: 0,
         color: selected ? G.gold : G.textFaint,
       }}
@@ -119,7 +119,7 @@ function SelectChip({ Icon, label, selected, onClick }) {
       }}
       onMouseLeave={e => {
         if (!selected) {
-          e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)';
+          e.currentTarget.style.borderColor = 'rgba(43,38,32,0.07)';
           e.currentTarget.style.color = G.textFaint;
         }
       }}
@@ -139,7 +139,7 @@ function SelectChip({ Icon, label, selected, onClick }) {
             width: 14, height: 14, borderRadius: '50%',
             background: G.gold,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#0d0d0a',
+            color: '#fff',
           }}
         ><Check size={8} strokeWidth={3} /></motion.div>
       )}
@@ -152,8 +152,8 @@ function TimeToggle({ value, onChange }) {
   return (
     <div style={{
       display: 'flex', gap: '0.375rem',
-      background: 'rgba(255,255,255,0.02)',
-      border: `1px solid rgba(201,185,154,0.1)`,
+      background: 'rgba(43,38,32,0.02)',
+      border: `1px solid rgba(43,38,32,0.11)`,
       borderRadius: 10, padding: '0.25rem',
     }}>
       {TIMES.map(t => (
@@ -166,7 +166,7 @@ function TimeToggle({ value, onChange }) {
             color: value === t.id ? G.gold : G.textFaint,
             fontSize: '0.6875rem', fontWeight: 600,
             fontFamily: G.sans, letterSpacing: '0.04em',
-            boxShadow: value === t.id ? `0 0 12px rgba(201,185,154,0.08)` : 'none',
+            boxShadow: value === t.id ? `0 0 12px rgba(43,38,32,0.09)` : 'none',
             transition: 'all 0.2s',
           }}
         >
@@ -184,15 +184,15 @@ function StyleCard({ item, selected, onClick }) {
     <motion.button
       type="button" onClick={onClick} whileTap={{ scale: 0.97 }}
       style={{
-        background: selected ? G.goldFaint : 'rgba(255,255,255,0.02)',
-        border: `1px solid ${selected ? G.goldBorder : 'rgba(255,255,255,0.06)'}`,
+        background: selected ? G.goldFaint : 'rgba(43,38,32,0.02)',
+        border: `1px solid ${selected ? G.goldBorder : 'rgba(43,38,32,0.06)'}`,
         borderRadius: 10, padding: '0.75rem 0.625rem', cursor: 'pointer', position: 'relative',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem',
-        boxShadow: selected ? `0 0 20px rgba(201,185,154,0.1)` : 'none',
+        boxShadow: selected ? `0 0 20px rgba(43,38,32,0.11)` : 'none',
         transition: 'all 0.2s', flex: 1, minWidth: 0,
       }}
-      onMouseEnter={e => { if (!selected) e.currentTarget.style.borderColor = 'rgba(201,185,154,0.12)'; }}
-      onMouseLeave={e => { if (!selected) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}
+      onMouseEnter={e => { if (!selected) e.currentTarget.style.borderColor = 'rgba(43,38,32,0.13)'; }}
+      onMouseLeave={e => { if (!selected) e.currentTarget.style.borderColor = 'rgba(43,38,32,0.06)'; }}
     >
       <div style={{
         width: '100%', height: 36, borderRadius: 7,
@@ -215,7 +215,7 @@ function StyleCard({ item, selected, onClick }) {
             width: 15, height: 15, borderRadius: '50%',
             background: G.gold,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#0d0d0a',
+            color: '#fff',
           }}
         ><Check size={9} strokeWidth={3} /></motion.div>
       )}
@@ -229,22 +229,22 @@ function PaletteCard({ item, selected, onClick }) {
     <motion.button
       type="button" onClick={onClick} whileTap={{ scale: 0.97 }}
       style={{
-        background: selected ? G.goldFaint : 'rgba(255,255,255,0.02)',
-        border: `1px solid ${selected ? G.goldBorder : 'rgba(255,255,255,0.06)'}`,
+        background: selected ? G.goldFaint : 'rgba(43,38,32,0.02)',
+        border: `1px solid ${selected ? G.goldBorder : 'rgba(43,38,32,0.06)'}`,
         borderRadius: 10, padding: '0.625rem 0.5rem',
         cursor: 'pointer', position: 'relative',
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem',
-        boxShadow: selected ? `0 0 18px rgba(201,185,154,0.1)` : 'none',
+        boxShadow: selected ? `0 0 18px rgba(43,38,32,0.11)` : 'none',
         transition: 'all 0.2s', flex: 1, minWidth: 0,
       }}
-      onMouseEnter={e => { if (!selected) e.currentTarget.style.borderColor = 'rgba(201,185,154,0.12)'; }}
-      onMouseLeave={e => { if (!selected) e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; }}
+      onMouseEnter={e => { if (!selected) e.currentTarget.style.borderColor = 'rgba(43,38,32,0.13)'; }}
+      onMouseLeave={e => { if (!selected) e.currentTarget.style.borderColor = 'rgba(43,38,32,0.06)'; }}
     >
       <div style={{ display: 'flex', gap: 3 }}>
         {item.colors.map((c, i) => (
           <div key={i} style={{
             width: 14, height: 14, borderRadius: '50%',
-            background: c, border: '1px solid rgba(255,255,255,0.08)',
+            background: c, border: '1px solid rgba(43,38,32,0.08)',
           }} />
         ))}
       </div>
@@ -261,7 +261,7 @@ function PaletteCard({ item, selected, onClick }) {
             width: 13, height: 13, borderRadius: '50%',
             background: G.gold,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#0d0d0a',
+            color: '#fff',
           }}
         ><Check size={8} strokeWidth={3} /></motion.div>
       )}
@@ -284,7 +284,7 @@ function WeatherChip({ info, loading }) {
         >
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: '0.5rem',
-            background: 'rgba(201,185,154,0.05)',
+            background: 'rgba(43,38,32,0.06)',
             border: `1px solid ${G.goldBorder}`,
             borderRadius: 999, padding: '0.3rem 0.75rem',
           }}>
@@ -328,15 +328,15 @@ function StepIndicator({ step }) {
       <div style={{
         width: 30, height: 30, borderRadius: '50%',
         background: step >= n ? G.gold : 'transparent',
-        border: `1.5px solid ${step >= n ? G.gold : 'rgba(201,185,154,0.2)'}`,
+        border: `1.5px solid ${step >= n ? G.gold : 'rgba(43,38,32,0.22)'}`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: '0.6875rem', fontWeight: 700,
-        color: step >= n ? '#0d0d0a' : 'rgba(201,185,154,0.3)',
+        color: step >= n ? '#fff' : 'rgba(226,87,26,0.3)',
         fontFamily: G.sans, transition: 'all 0.35s',
       }}>{n}</div>
       <span style={{
         fontSize: '0.5rem', letterSpacing: '0.12em', textTransform: 'uppercase',
-        color: step === n ? G.goldMid : 'rgba(201,185,154,0.2)',
+        color: step === n ? G.goldMid : 'rgba(43,38,32,0.22)',
         fontFamily: G.sans, transition: 'color 0.35s',
       }}>{n === 1 ? 'Event' : 'Style'}</span>
     </div>
@@ -347,7 +347,7 @@ function StepIndicator({ step }) {
       <Dot n={1} />
       <div style={{
         width: 64, height: 1.5, margin: '0 10px', marginBottom: 18,
-        background: `linear-gradient(90deg, ${step >= 2 ? G.gold : 'rgba(201,185,154,0.2)'}, ${step >= 2 ? G.goldDim : 'rgba(201,185,154,0.1)'})`,
+        background: `linear-gradient(90deg, ${step >= 2 ? G.gold : 'rgba(43,38,32,0.22)'}, ${step >= 2 ? G.goldDim : 'rgba(43,38,32,0.11)'})`,
         transition: 'all 0.4s',
       }} />
       <Dot n={2} />
@@ -366,21 +366,21 @@ function GoldInput({ name, placeholder, value, onChange, required }) {
       required={required}
       style={{
         width: '100%', padding: '0.75rem 1rem',
-        background: 'rgba(201,185,154,0.04)',
-        border: `1px solid rgba(201,185,154,0.14)`,
+        background: 'rgba(43,38,32,0.04)',
+        border: `1px solid rgba(43,38,32,0.15)`,
         borderRadius: 9, outline: 'none',
         color: G.text, fontFamily: G.sans, fontSize: '0.875rem',
         transition: 'border-color 0.2s, box-shadow 0.2s',
       }}
       onFocus={e => {
-        e.target.style.borderColor = 'rgba(201,185,154,0.4)';
-        e.target.style.boxShadow = '0 0 0 3px rgba(201,185,154,0.07)';
-        e.target.style.background = 'rgba(201,185,154,0.06)';
+        e.target.style.borderColor = 'rgba(226,87,26,0.4)';
+        e.target.style.boxShadow = '0 0 0 3px rgba(43,38,32,0.08)';
+        e.target.style.background = 'rgba(43,38,32,0.07)';
       }}
       onBlur={e => {
-        e.target.style.borderColor = 'rgba(201,185,154,0.14)';
+        e.target.style.borderColor = 'rgba(43,38,32,0.15)';
         e.target.style.boxShadow = 'none';
-        e.target.style.background = 'rgba(201,185,154,0.04)';
+        e.target.style.background = 'rgba(43,38,32,0.04)';
       }}
     />
   );
@@ -389,11 +389,11 @@ function GoldInput({ name, placeholder, value, onChange, required }) {
 /* ════════════════════════════════════════════════
    MAIN FORM
 ═══════════════════════════════════════════════════ */
-function OccasionForm({ onSubmit, isLoading = false }) {
+function OccasionForm({ onSubmit, isLoading = false, initialOccasion = null }) {
   const [step, setStep] = useState(1);
   const [direction, setDirection] = useState(1);
   const [formData, setFormData] = useState({
-    occasion: 'Concert', time: 'Night', weather: 'Clear',
+    occasion: initialOccasion || 'Concert', time: 'Night', weather: 'Clear',
     location: '', venue: '', artist: '',
     styleEnergy: '', colorMood: '',
   });
@@ -520,14 +520,14 @@ function OccasionForm({ onSubmit, isLoading = false }) {
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 width: '100%', padding: '13px 36px',
                 background: formData.location
-                  ? `linear-gradient(135deg, rgba(201,185,154,0.18), rgba(201,185,154,0.1))`
-                  : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${formData.location ? G.goldBorder : 'rgba(255,255,255,0.06)'}`,
+                  ? `linear-gradient(135deg, rgba(43,38,32,0.2), rgba(43,38,32,0.11))`
+                  : 'rgba(43,38,32,0.02)',
+                border: `1px solid ${formData.location ? G.goldBorder : 'rgba(43,38,32,0.06)'}`,
                 borderRadius: 10, cursor: formData.location ? 'pointer' : 'not-allowed',
                 color: formData.location ? G.gold : G.textFaint,
                 fontFamily: G.sans, fontSize: '0.9rem', fontWeight: 600,
                 letterSpacing: '0.04em', transition: 'all 0.2s',
-                boxShadow: formData.location ? '0 0 24px rgba(201,185,154,0.08)' : 'none',
+                boxShadow: formData.location ? '0 0 24px rgba(43,38,32,0.09)' : 'none',
               }}
             >
               Continue to Style
@@ -626,7 +626,7 @@ function OccasionForm({ onSubmit, isLoading = false }) {
                 style={{
                   padding: '13px 18px',
                   background: 'transparent',
-                  border: `1px solid rgba(201,185,154,0.14)`,
+                  border: `1px solid rgba(43,38,32,0.15)`,
                   borderRadius: 10, cursor: 'pointer',
                   color: G.goldDim, fontFamily: G.sans, fontSize: '0.875rem',
                   display: 'flex', alignItems: 'center', gap: 6,
@@ -634,7 +634,7 @@ function OccasionForm({ onSubmit, isLoading = false }) {
                   flexShrink: 0,
                 }}
                 onMouseEnter={e => { e.currentTarget.style.color = G.gold; e.currentTarget.style.borderColor = G.goldBorder; }}
-                onMouseLeave={e => { e.currentTarget.style.color = G.goldDim; e.currentTarget.style.borderColor = 'rgba(201,185,154,0.14)'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = G.goldDim; e.currentTarget.style.borderColor = 'rgba(43,38,32,0.15)'; }}
               >
                 <ArrowLeft size={14} strokeWidth={2} /> Back
               </motion.button>
@@ -644,7 +644,7 @@ function OccasionForm({ onSubmit, isLoading = false }) {
                 style={{ flex: 1, opacity: isLoading ? 0.6 : 1, pointerEvents: isLoading ? 'none' : 'auto' }}
                 whileHover={isLoading ? {} : { scale: 1.01 }}
                 whileTap={isLoading ? {} : { scale: 0.99 }}
-                rippleColor="rgba(255,255,255,0.28)"
+                rippleColor="rgba(43,38,32,0.28)"
                 disabled={isLoading}
               >
                 {isLoading ? 'Styling…' : 'Stylize Me ✦'}

@@ -40,8 +40,8 @@ function Preferences({ onSave }) {
           display: 'inline-block',
           fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.12em',
           textTransform: 'uppercase', color: 'var(--accent)',
-          background: 'rgba(255,107,157,0.1)', padding: '4px 14px',
-          borderRadius: '999px', border: '1px solid rgba(255,107,157,0.22)',
+          background: 'rgba(226,87,26,0.1)', padding: '4px 14px',
+          borderRadius: '999px', border: '1px solid rgba(226,87,26,0.22)',
           marginBottom: '0.875rem',
         }}>
           Style Profile
@@ -83,7 +83,7 @@ function Preferences({ onSave }) {
                   </span>
                   <span style={{
                     fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-3)',
-                    background: 'rgba(255,255,255,0.05)', padding: '1px 9px',
+                    background: 'rgba(43,38,32,0.05)', padding: '1px 9px',
                     borderRadius: '999px', border: '1px solid var(--border)',
                     minWidth: '32px', textAlign: 'center',
                   }}>
@@ -130,7 +130,7 @@ function Preferences({ onSave }) {
           style={{ width: '100%' }}
           whileHover={{ scale: 1.01 }}
           whileTap={{ scale: 0.99 }}
-          rippleColor="rgba(255,255,255,0.3)"
+          rippleColor="rgba(43,38,32,0.3)"
         >
           Generate My Palette ✦
         </RippleButton>

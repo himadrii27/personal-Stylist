@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import LiquidPixelWave from './components/LiquidPixelWave';
 import CurrentVibeCard from './components/CurrentVibeCard';
 import Preferences from './components/Preferences';
 import OccasionForm from './components/OccasionForm';
 import Recommendation from './components/Recommendation';
 import HomePage from './components/HomePage';
+import WardrobePage from './wardrobe/WardrobePage';
 import { getGeminiOutfit } from './utils/geminiService';
 
 const pageVariants = {
@@ -16,6 +16,8 @@ const pageVariants = {
 
 function App() {
   const [appStarted, setAppStarted] = useState(false);
+  const [section, setSection] = useState('event');          // 'event' | 'wardrobe' once inside the app
+  const [startOccasion, setStartOccasion] = useState(null);
 
   const [userPrefs, setUserPrefs] = useState(() => {
     const saved = localStorage.getItem('personalStylistPrefs');
@@ -55,70 +57,58 @@ function App() {
     }
   };
 
+  // each step of the flow starts at the top of the page
+  useEffect(() => { window.scrollTo(0, 0); }, [appStarted, section, view, isLoading, error]);
+
   if (!appStarted) {
-    return <HomePage onGetStarted={() => setAppStarted(true)} />;
+    return (
+      <HomePage
+        onGetStarted={(occ) => { setStartOccasion(typeof occ === 'string' ? occ : null); setSection('event'); setAppStarted(true); }}
+        onOpenWardrobe={() => { setSection('wardrobe'); setAppStarted(true); }}
+      />
+    );
   }
 
-  const navBtnStyle = {
-    background: 'transparent', border: '1px solid rgba(255,255,255,0.1)',
-    color: 'rgba(240,240,240,0.5)', fontSize: '0.8125rem',
-    fontFamily: 'var(--font)', padding: '0.375rem 0.875rem',
-    borderRadius: 7, cursor: 'pointer', letterSpacing: '0.01em',
-    transition: 'color 0.2s, border-color 0.2s', boxShadow: 'none',
-  };
+  const goHome = () => { setAppStarted(false); setRecommendation(null); setView('form'); setError(null); };
+
+  if (section === 'wardrobe') {
+    return (
+      <>
+        <nav className="hp-nav">
+          <button className="hp-nav-logo" onClick={goHome}>
+            Personal Stylist<span className="hp-nav-logo-mark" aria-hidden="true" />
+          </button>
+          <div className="hp-nav-cells">
+            <button className="hp-nav-cell hp-nav-links" onClick={goHome}>← Home</button>
+            <button className="hp-nav-cell hp-nav-cta" onClick={() => setSection('event')}>Style my event</button>
+          </div>
+        </nav>
+        <main style={{ paddingTop: 56, minHeight: '100vh' }}>
+          <WardrobePage />
+        </main>
+      </>
+    );
+  }
 
   return (
     <>
-      {/* App sticky nav */}
-      <nav style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        background: 'rgba(8,8,8,0.88)', backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(255,255,255,0.07)',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 2rem', height: 56,
-      }}>
-        <button
-          onClick={() => { setAppStarted(false); setRecommendation(null); setView('form'); setError(null); }}
-          style={navBtnStyle}
-          onMouseEnter={e => { e.currentTarget.style.color = 'rgba(240,240,240,0.9)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)'; }}
-          onMouseLeave={e => { e.currentTarget.style.color = 'rgba(240,240,240,0.5)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
-        >
-          ← Home
+      {/* Same header as the homepage: logo left, bordered cells right */}
+      <nav className="hp-nav">
+        <button className="hp-nav-logo" onClick={goHome}>
+          Personal Stylist<span className="hp-nav-logo-mark" aria-hidden="true" />
         </button>
-        <span style={{
-          fontFamily: '"Cormorant Garant", Georgia, serif',
-          fontSize: '1.1rem', fontWeight: 600, color: '#e8e2d5',
-          letterSpacing: '0.01em',
-        }}>
-          Personal Stylist
-        </span>
-        {view === 'recommendation' ? (
-          <button
-            onClick={() => setView('form')}
-            style={navBtnStyle}
-            onMouseEnter={e => { e.currentTarget.style.color = 'rgba(240,240,240,0.9)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)'; }}
-            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(240,240,240,0.5)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
-          >
-            ← Back
-          </button>
-        ) : recommendation ? (
-          <button
-            onClick={() => setView('recommendation')}
-            style={navBtnStyle}
-            onMouseEnter={e => { e.currentTarget.style.color = 'rgba(240,240,240,0.9)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.22)'; }}
-            onMouseLeave={e => { e.currentTarget.style.color = 'rgba(240,240,240,0.5)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.1)'; }}
-          >
-            Resume Look →
-          </button>
-        ) : (
-          <div style={{ width: 80 }} />
-        )}
+        <div className="hp-nav-cells">
+          <button className="hp-nav-cell" onClick={goHome}>← Home</button>
+          {view === 'recommendation' ? (
+            <button className="hp-nav-cell hp-nav-cta" onClick={() => setView('form')}>← Brief</button>
+          ) : recommendation ? (
+            <button className="hp-nav-cell hp-nav-cta" onClick={() => setView('recommendation')}>Resume look →</button>
+          ) : null}
+        </div>
       </nav>
 
       <section id="main-content" style={{ position: 'relative', paddingTop: 56, overflow: view === 'recommendation' ? 'hidden' : 'visible' }}>
-        {view !== 'recommendation' && <LiquidPixelWave />}
-        <div className="app-container" style={{ position: 'relative', zIndex: 1, padding: view === 'recommendation' ? 0 : undefined }}>
+        <div className="app-container" style={{ position: 'relative', zIndex: 1, padding: view === 'recommendation' ? 0 : undefined, minHeight: 'calc(100vh - 56px)' }}>
           <AnimatePresence mode="wait">
             {!userPrefs ? (
               <motion.div key="prefs" variants={pageVariants} initial="initial" animate="animate" exit="exit">
@@ -142,25 +132,25 @@ function App() {
                     style={{
                       marginBottom: '0.875rem',
                       padding: '0.625rem 1rem',
-                      background: 'rgba(201,185,154,0.05)',
-                      border: '1px solid rgba(201,185,154,0.13)',
+                      background: 'rgba(43,38,32,0.06)',
+                      border: '1px solid rgba(43,38,32,0.14)',
                       borderRadius: 9,
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     }}
                   >
                     <div>
-                      <p style={{ fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(201,185,154,0.45)', fontFamily: 'var(--font)', marginBottom: '0.15rem' }}>
+                      <p style={{ fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: 'rgba(226,87,26,0.45)', fontFamily: 'var(--font)', marginBottom: '0.15rem' }}>
                         Saved Look
                       </p>
-                      <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#e8e2d5', fontFamily: '"Cormorant Garant", Georgia, serif', fontStyle: 'italic' }}>
+                      <p style={{ fontSize: '0.8rem', fontWeight: 600, color: '#0d0d0b', fontFamily: '"Instrument Serif", Georgia, serif', fontStyle: 'italic' }}>
                         {recommendation.outfit_name}
                       </p>
                     </div>
                     <button
                       onClick={() => setView('recommendation')}
                       style={{
-                        background: 'rgba(201,185,154,0.09)', border: '1px solid rgba(201,185,154,0.2)',
-                        color: '#c9b99a', borderRadius: 7, padding: '0.35rem 0.75rem',
+                        background: 'rgba(43,38,32,0.1)', border: '1px solid rgba(43,38,32,0.22)',
+                        color: '#E2571A', borderRadius: 7, padding: '0.35rem 0.75rem',
                         fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
                         fontFamily: 'var(--font)', letterSpacing: '0.03em', boxShadow: 'none',
                       }}
@@ -170,7 +160,7 @@ function App() {
                   </motion.div>
                 )}
                 <CurrentVibeCard userPrefs={userPrefs} onEditProfile={() => { setUserPrefs(null); setRecommendation(null); setView('form'); }}>
-                  <OccasionForm onSubmit={generateRecommendation} isLoading={isLoading} />
+                  <OccasionForm onSubmit={generateRecommendation} isLoading={isLoading} initialOccasion={startOccasion} />
                 </CurrentVibeCard>
               </motion.div>
 
@@ -222,7 +212,7 @@ function GeminiLoadingCard() {
       <div style={{
         width: 52, height: 52, margin: '0 auto 1.5rem',
         borderRadius: '50%',
-        border: '3px solid rgba(255,107,157,0.15)',
+        border: '3px solid rgba(226,87,26,0.15)',
         borderTopColor: 'var(--accent)',
         animation: 'spin 0.9s linear infinite',
       }} />
@@ -240,12 +230,12 @@ function GeminiLoadingCard() {
 function ErrorCard({ message, onRetry }) {
   return (
     <div className="magic-card" style={{ padding: '2rem' }}>
-      <p style={{ color: '#ff6b6b', fontWeight: 600, marginBottom: '0.5rem' }}>Something went wrong</p>
+      <p style={{ color: '#C0392B', fontWeight: 600, marginBottom: '0.5rem' }}>Something went wrong</p>
       <p style={{ color: 'var(--text-3)', fontSize: '0.875rem', marginBottom: '1.25rem' }}>{message}</p>
       <button
         onClick={onRetry}
         style={{
-          background: 'rgba(255,107,157,0.1)', border: '1px solid rgba(255,107,157,0.35)',
+          background: 'rgba(226,87,26,0.1)', border: '1px solid rgba(226,87,26,0.35)',
           color: 'var(--accent)', borderRadius: 'var(--radius-sm)',
           padding: '0.6rem 1.25rem', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 600,
         }}

@@ -10,18 +10,18 @@ import { searchAllCategories } from '../utils/productSearchService';
 
 /* ── Theme tokens ─────────────────────────────────────────────────── */
 const G = {
-  gold:       '#c9b99a',
-  goldMid:    'rgba(201,185,154,0.55)',
-  goldDim:    'rgba(201,185,154,0.35)',
-  goldFaint:  'rgba(201,185,154,0.07)',
-  goldBorder: 'rgba(201,185,154,0.14)',
-  surface:    '#111109',
-  surfaceL:   '#161612',
-  bg:         '#0d0d0a',
-  text:       '#e8e2d5',
-  textDim:    'rgba(232,226,213,0.55)',
-  textFaint:  'rgba(232,226,213,0.28)',
-  serif:      '"Cormorant Garant", Georgia, serif',
+  gold:       '#E2571A',
+  goldMid:    'rgba(13,13,11,0.55)',
+  goldDim:    'rgba(13,13,11,0.4)',
+  goldFaint:  'rgba(43,38,32,0.08)',
+  goldBorder: 'rgba(43,38,32,0.15)',
+  surface:    '#FFFFFF',
+  surfaceL:   '#FBF8F3',
+  bg:         '#F9F7F4',
+  text:       '#0d0d0b',
+  textDim:    'rgba(13,13,11,0.7)',
+  textFaint:  'rgba(13,13,11,0.43)',
+  serif:      '"Instrument Serif", Georgia, serif',
   sans:       '"Inter", -apple-system, sans-serif',
 };
 
@@ -74,10 +74,10 @@ function LeftPanel({ data, selections }) {
   const hasMore = outfit_description && outfit_description.length > tagline.length + 5;
 
   return (
-    <div style={{
+    <div className="rec-left" style={{
       width: 232, flexShrink: 0,
       background: G.surface,
-      borderRight: `1px solid rgba(201,185,154,0.08)`,
+      borderRight: `1px solid rgba(43,38,32,0.09)`,
       padding: '1.75rem 1.125rem',
       overflowY: 'auto',
       display: 'flex', flexDirection: 'column', gap: '1.25rem',
@@ -155,8 +155,8 @@ function LeftPanel({ data, selections }) {
               <div key={cat} style={{
                 display: 'flex', alignItems: 'flex-start', gap: '0.5rem',
                 padding: '0.5rem 0.625rem',
-                background: hasAny ? G.goldFaint : 'rgba(255,255,255,0.02)',
-                border: `1px solid ${hasAny ? G.goldBorder : 'rgba(255,255,255,0.05)'}`,
+                background: hasAny ? G.goldFaint : 'rgba(43,38,32,0.02)',
+                border: `1px solid ${hasAny ? G.goldBorder : 'rgba(43,38,32,0.05)'}`,
                 borderRadius: 7, transition: 'all 0.2s',
               }}>
                 <span style={{ color: hasAny ? G.gold : G.textFaint, marginTop: 1 }}>{CAT_ICONS[cat]}</span>
@@ -164,7 +164,7 @@ function LeftPanel({ data, selections }) {
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.1rem' }}>
                     <p style={{ fontSize: '0.48rem', fontWeight: 700, letterSpacing: '0.1em', color: hasAny ? G.goldDim : G.textFaint, textTransform: 'uppercase', fontFamily: G.sans }}>{CAT_LABELS[cat]}</p>
                     {catSels.length > 1 && (
-                      <span style={{ fontSize: '0.42rem', fontWeight: 800, color: '#0d0d0a', background: G.gold, borderRadius: 3, padding: '1px 5px', fontFamily: G.sans }}>
+                      <span style={{ fontSize: '0.42rem', fontWeight: 800, color: '#fff', background: G.gold, borderRadius: 3, padding: '1px 5px', fontFamily: G.sans }}>
                         {catSels.length}
                       </span>
                     )}
@@ -193,8 +193,8 @@ function LeftPanel({ data, selections }) {
             {mandatory_accessories.map((a, i) => (
               <span key={i} style={{
                 fontSize: '0.62rem', color: G.textDim,
-                background: 'rgba(255,255,255,0.03)',
-                border: `1px solid rgba(255,255,255,0.07)`,
+                background: 'rgba(43,38,32,0.03)',
+                border: `1px solid rgba(43,38,32,0.07)`,
                 borderRadius: 999, padding: '2px 8px', fontFamily: G.sans,
               }}>{a}</span>
             ))}
@@ -224,8 +224,8 @@ function LeftPanel({ data, selections }) {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.35rem' }}>
             {mandatory_survival_items.slice(0, 3).map((item, i) => (
               <div key={i} style={{
-                background: 'rgba(255,255,255,0.02)',
-                border: `1px solid rgba(255,255,255,0.06)`,
+                background: 'rgba(43,38,32,0.02)',
+                border: `1px solid rgba(43,38,32,0.06)`,
                 borderRadius: 8, padding: '0.5rem 0.3rem',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.35rem',
                 textAlign: 'center',
@@ -264,7 +264,7 @@ function LeftPanel({ data, selections }) {
 /* ── CENTER PANEL ────────────────────────────────────────────────── */
 function CenterPanel({ imageUrl, imgLoading, imgError, onVisualize, outfitName }) {
   return (
-    <div style={{
+    <div className="rec-center" style={{
       flex: 1,
       background: G.bg,
       display: 'flex',
@@ -273,7 +273,7 @@ function CenterPanel({ imageUrl, imgLoading, imgError, onVisualize, outfitName }
       justifyContent: 'center',
       position: 'relative',
       overflow: 'hidden',
-      borderRight: `1px solid rgba(201,185,154,0.06)`,
+      borderRight: `1px solid rgba(43,38,32,0.07)`,
     }}>
       <AnimatePresence mode="wait">
         {imgLoading ? (
@@ -319,15 +319,15 @@ function CenterPanel({ imageUrl, imgLoading, imgError, onVisualize, outfitName }
               <button
                 onClick={onVisualize}
                 style={{
-                  background: 'rgba(201,185,154,0.1)', border: `1px solid ${G.goldBorder}`,
+                  background: 'rgba(43,38,32,0.11)', border: `1px solid ${G.goldBorder}`,
                   color: G.gold, borderRadius: 8, padding: '0.5rem 1rem',
                   fontSize: '0.75rem', fontWeight: 600, cursor: 'pointer',
                   fontFamily: G.sans, letterSpacing: '0.04em',
                   display: 'flex', alignItems: 'center', gap: 6,
                   boxShadow: 'none', transition: 'all 0.2s',
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(201,185,154,0.15)'; }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(201,185,154,0.1)'; }}
+                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(43,38,32,0.17)'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(43,38,32,0.11)'; }}
               >
                 ↺ Regenerate
               </button>
@@ -343,7 +343,7 @@ function CenterPanel({ imageUrl, imgLoading, imgError, onVisualize, outfitName }
             {/* Decorative outfit name */}
             <h1 style={{
               fontFamily: G.serif, fontSize: 'clamp(2rem, 4vw, 3.5rem)', fontWeight: 600,
-              fontStyle: 'italic', color: 'rgba(201,185,154,0.15)', lineHeight: 1.1,
+              fontStyle: 'italic', color: 'rgba(43,38,32,0.17)', lineHeight: 1.1,
               userSelect: 'none', letterSpacing: '-0.01em',
             }}>
               {outfitName || 'Your Look'}
@@ -352,17 +352,17 @@ function CenterPanel({ imageUrl, imgLoading, imgError, onVisualize, outfitName }
             {/* Visualize button */}
             <motion.button
               onClick={onVisualize}
-              whileHover={{ y: -2, boxShadow: `0 8px 32px rgba(201,185,154,0.15)` }}
+              whileHover={{ y: -2, boxShadow: `0 8px 32px rgba(43,38,32,0.17)` }}
               whileTap={{ scale: 0.98 }}
               style={{
                 display: 'flex', alignItems: 'center', gap: '0.625rem',
-                background: `linear-gradient(135deg, rgba(201,185,154,0.15), rgba(201,185,154,0.08))`,
+                background: `linear-gradient(135deg, rgba(43,38,32,0.17), rgba(43,38,32,0.09))`,
                 border: `1px solid ${G.goldBorder}`,
                 color: G.gold,
                 borderRadius: 10, padding: '0.875rem 1.75rem',
                 fontSize: '0.9375rem', fontWeight: 600, cursor: 'pointer',
                 fontFamily: G.sans, letterSpacing: '0.04em',
-                boxShadow: `0 0 28px rgba(201,185,154,0.06)`,
+                boxShadow: `0 0 28px rgba(43,38,32,0.07)`,
                 transition: 'all 0.2s',
               }}
             >
@@ -379,7 +379,7 @@ function CenterPanel({ imageUrl, imgLoading, imgError, onVisualize, outfitName }
             {/* Grid decorative bg */}
             <div style={{
               position: 'absolute', inset: 0, zIndex: -1, pointerEvents: 'none',
-              backgroundImage: `linear-gradient(rgba(201,185,154,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(201,185,154,0.03) 1px, transparent 1px)`,
+              backgroundImage: `linear-gradient(rgba(43,38,32,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(43,38,32,0.03) 1px, transparent 1px)`,
               backgroundSize: '40px 40px',
             }} />
           </motion.div>
@@ -396,17 +396,17 @@ function AISuggestionCard({ option, selected, onSelect }) {
       onClick={() => onSelect(option)}
       whileHover={{ y: -1 }}
       style={{
-        background: selected ? G.goldFaint : 'rgba(255,255,255,0.02)',
-        border: `1px solid ${selected ? G.goldBorder : 'rgba(255,255,255,0.06)'}`,
+        background: selected ? G.goldFaint : 'rgba(43,38,32,0.02)',
+        border: `1px solid ${selected ? G.goldBorder : 'rgba(43,38,32,0.06)'}`,
         borderRadius: 9, padding: '0.75rem', cursor: 'pointer',
         position: 'relative', transition: 'all 0.2s',
-        boxShadow: selected ? `0 0 16px rgba(201,185,154,0.08)` : 'none',
+        boxShadow: selected ? `0 0 16px rgba(43,38,32,0.09)` : 'none',
       }}
     >
       {selected && (
         <div style={{
           position: 'absolute', top: 7, right: 7,
-          background: G.gold, color: '#0d0d0a',
+          background: G.gold, color: '#fff',
           fontSize: '0.42rem', fontWeight: 800, letterSpacing: '0.12em',
           padding: '2px 6px', borderRadius: 3,
         }}>SELECTED</div>
@@ -432,14 +432,14 @@ function ProductCard({ product, selected, onSelect }) {
       onClick={() => onSelect(product)}
       style={{
         background: G.surfaceL,
-        border: `1px solid ${selected ? G.goldBorder : 'rgba(255,255,255,0.05)'}`,
+        border: `1px solid ${selected ? G.goldBorder : 'rgba(43,38,32,0.05)'}`,
         borderRadius: 8, overflow: 'hidden', position: 'relative',
-        boxShadow: selected ? `0 0 20px rgba(201,185,154,0.08)` : 'none',
+        boxShadow: selected ? `0 0 20px rgba(43,38,32,0.09)` : 'none',
         transition: 'all 0.2s', cursor: 'pointer',
       }}
     >
       {/* Product image */}
-      <div style={{ aspectRatio: '3/4', background: '#1a1a13', overflow: 'hidden', position: 'relative' }}>
+      <div style={{ aspectRatio: '3/4', background: '#EDE9E2', overflow: 'hidden', position: 'relative' }}>
         {product.image ? (
           <img
             src={product.image} alt={product.title}
@@ -456,7 +456,7 @@ function ProductCard({ product, selected, onSelect }) {
         {selected && (
           <div style={{
             position: 'absolute', top: 7, left: 7,
-            background: G.gold, color: '#0d0d0a',
+            background: G.gold, color: '#fff',
             fontSize: '0.42rem', fontWeight: 800, letterSpacing: '0.12em',
             padding: '2px 7px', borderRadius: 3,
           }}>SELECTED</div>
@@ -471,7 +471,7 @@ function ProductCard({ product, selected, onSelect }) {
               width: 24, height: 24, borderRadius: '50%',
               background: 'rgba(0,0,0,0.55)', border: 'none',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: 'rgba(255,255,255,0.7)',
+              cursor: 'pointer', color: 'rgba(43,38,32,0.7)',
               boxShadow: 'none', padding: 0,
             }}
           >
@@ -503,10 +503,10 @@ function ProductCard({ product, selected, onSelect }) {
             onClick={e => { e.stopPropagation(); onSelect(product); }}
             style={{
               width: 22, height: 22, borderRadius: '50%',
-              background: selected ? G.gold : 'rgba(201,185,154,0.1)',
+              background: selected ? G.gold : 'rgba(43,38,32,0.11)',
               border: `1px solid ${selected ? G.gold : G.goldBorder}`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer', color: selected ? '#0d0d0a' : G.gold,
+              cursor: 'pointer', color: selected ? '#fff' : G.gold,
               transition: 'all 0.18s', boxShadow: 'none', padding: 0,
             }}
           >
@@ -531,11 +531,11 @@ function RightPanel({ data, selections, onSelect, onCheckout, activeBudget, setA
   const showRealProducts    = activeBudget && !shopLoading && !shopError && currentTabProducts.length > 0;
 
   return (
-    <div style={{
+    <div className="rec-right" style={{
       width: 336,
       flexShrink: 0,
       background: G.surface,
-      borderLeft: `1px solid rgba(201,185,154,0.08)`,
+      borderLeft: `1px solid rgba(43,38,32,0.09)`,
       display: 'flex',
       flexDirection: 'column',
       overflow: 'hidden',
@@ -543,7 +543,7 @@ function RightPanel({ data, selections, onSelect, onCheckout, activeBudget, setA
       {/* Header */}
       <div style={{
         padding: '1.25rem 1.25rem 1rem',
-        borderBottom: `1px solid rgba(201,185,154,0.07)`,
+        borderBottom: `1px solid rgba(43,38,32,0.08)`,
         flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem' }}>
@@ -564,8 +564,8 @@ function RightPanel({ data, selections, onSelect, onCheckout, activeBudget, setA
 
         {/* Budget selector */}
         <div style={{
-          background: 'rgba(255,255,255,0.02)',
-          border: `1px solid rgba(255,255,255,0.06)`,
+          background: 'rgba(43,38,32,0.02)',
+          border: `1px solid rgba(43,38,32,0.06)`,
           borderRadius: 10, padding: '0.75rem 0.875rem',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.6rem' }}>
@@ -579,7 +579,7 @@ function RightPanel({ data, selections, onSelect, onCheckout, activeBudget, setA
                 animate={{ opacity: 1, scale: 1 }}
                 style={{
                   fontSize: '0.5rem', fontWeight: 700, letterSpacing: '0.1em',
-                  color: '#0d0d0a', background: G.gold,
+                  color: '#fff', background: G.gold,
                   borderRadius: 3, padding: '2px 6px', fontFamily: G.sans,
                 }}
               >SEARCHING</motion.span>
@@ -591,22 +591,22 @@ function RightPanel({ data, selections, onSelect, onCheckout, activeBudget, setA
                 key={b}
                 onClick={() => setActiveBudget(prev => prev === b ? null : b)}
                 style={{
-                  background: activeBudget === b ? G.goldFaint : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${activeBudget === b ? G.gold : 'rgba(255,255,255,0.08)'}`,
+                  background: activeBudget === b ? G.goldFaint : 'rgba(43,38,32,0.03)',
+                  border: `1px solid ${activeBudget === b ? G.gold : 'rgba(43,38,32,0.08)'}`,
                   color: activeBudget === b ? G.gold : G.textFaint,
                   borderRadius: 999, padding: '0.3rem 0.75rem',
                   fontSize: '0.72rem', fontWeight: 600,
                   fontFamily: G.sans, cursor: 'pointer',
-                  transition: 'all 0.2s', boxShadow: activeBudget === b ? `0 0 12px rgba(201,185,154,0.12)` : 'none',
+                  transition: 'all 0.2s', boxShadow: activeBudget === b ? `0 0 12px rgba(43,38,32,0.13)` : 'none',
                 }}
                 onMouseEnter={e => { if (activeBudget !== b) { e.currentTarget.style.color = G.goldDim; e.currentTarget.style.borderColor = G.goldBorder; }}}
-                onMouseLeave={e => { if (activeBudget !== b) { e.currentTarget.style.color = G.textFaint; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; }}}
+                onMouseLeave={e => { if (activeBudget !== b) { e.currentTarget.style.color = G.textFaint; e.currentTarget.style.borderColor = 'rgba(43,38,32,0.08)'; }}}
               >{b}</button>
             ))}
           </div>
           {!activeBudget && (
             <p style={{
-              fontSize: '0.6rem', color: 'rgba(232,226,213,0.2)',
+              fontSize: '0.6rem', color: 'rgba(13,13,11,0.35)',
               fontFamily: G.sans, marginTop: '0.5rem', fontStyle: 'italic',
             }}>
               ↑ Tap a range to browse real items
@@ -618,7 +618,7 @@ function RightPanel({ data, selections, onSelect, onCheckout, activeBudget, setA
       {/* Category tabs */}
       <div style={{
         display: 'flex',
-        borderBottom: `1px solid rgba(201,185,154,0.07)`,
+        borderBottom: `1px solid rgba(43,38,32,0.08)`,
         flexShrink: 0,
       }}>
         {CATEGORIES.map(cat => (
@@ -679,7 +679,7 @@ function RightPanel({ data, selections, onSelect, onCheckout, activeBudget, setA
               style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
             >
               {activeBudget && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.4rem 0.5rem', background: 'rgba(255,255,255,0.02)', borderRadius: 6, marginBottom: '0.25rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.4rem 0.5rem', background: 'rgba(43,38,32,0.02)', borderRadius: 6, marginBottom: '0.25rem' }}>
                   <Loader2 size={11} strokeWidth={2} style={{ color: G.goldDim, animation: 'spin 0.8s linear infinite' }} />
                   <p style={{ fontSize: '0.65rem', color: G.textFaint, fontFamily: G.sans }}>No results for this category — showing AI suggestions</p>
                 </div>
@@ -724,7 +724,7 @@ function TotalEnsembleBar({ selections, onCheckout, activeBudget }) {
   return (
     <div style={{
       padding: '0.75rem 1.25rem',
-      borderTop: `1px solid rgba(201,185,154,0.08)`,
+      borderTop: `1px solid rgba(43,38,32,0.09)`,
       background: G.surface,
       flexShrink: 0,
     }}>
@@ -761,7 +761,7 @@ function TotalEnsembleBar({ selections, onCheckout, activeBudget }) {
                 ₹{totalPrice.toLocaleString('en-IN')}
               </span>
             ) : (
-              <span style={{ fontFamily: G.serif, fontSize: '1.1rem', fontWeight: 600, color: 'rgba(232,226,213,0.25)', fontStyle: 'italic', lineHeight: 1 }}>—</span>
+              <span style={{ fontFamily: G.serif, fontSize: '1.1rem', fontWeight: 600, color: 'rgba(13,13,11,0.4)', fontStyle: 'italic', lineHeight: 1 }}>—</span>
             )}
             <span style={{ fontSize: '0.68rem', color: G.textFaint, fontFamily: G.sans }}>
               {totalCount} {totalCount === 1 ? 'item' : 'items'}
@@ -770,7 +770,7 @@ function TotalEnsembleBar({ selections, onCheckout, activeBudget }) {
           {/* Budget hint */}
           {totalCount > 0 && !activeBudget && (
             <p style={{
-              fontSize: '0.58rem', color: 'rgba(201,185,154,0.45)',
+              fontSize: '0.58rem', color: 'rgba(226,87,26,0.45)',
               fontFamily: G.sans, marginTop: '0.25rem',
             }}>
               Select a budget above to checkout
@@ -780,13 +780,13 @@ function TotalEnsembleBar({ selections, onCheckout, activeBudget }) {
 
         <motion.button
           onClick={totalCount > 0 && activeBudget ? onCheckout : undefined}
-          whileHover={totalCount > 0 && activeBudget ? { scale: 1.03, boxShadow: `0 6px 24px rgba(201,185,154,0.25)` } : {}}
+          whileHover={totalCount > 0 && activeBudget ? { scale: 1.03, boxShadow: `0 6px 24px rgba(43,38,32,0.28)` } : {}}
           whileTap={totalCount > 0 && activeBudget ? { scale: 0.97 } : {}}
           style={{
             display: 'flex', alignItems: 'center', gap: '0.375rem',
-            background: totalCount > 0 && activeBudget ? G.gold : 'rgba(201,185,154,0.07)',
+            background: totalCount > 0 && activeBudget ? G.gold : 'rgba(43,38,32,0.08)',
             border: `1px solid ${totalCount > 0 && activeBudget ? G.gold : G.goldBorder}`,
-            color: totalCount > 0 && activeBudget ? '#0d0d0a' : G.textFaint,
+            color: totalCount > 0 && activeBudget ? '#fff' : G.textFaint,
             borderRadius: 8, padding: '0.5rem 1rem',
             fontSize: '0.75rem', fontWeight: 700,
             fontFamily: G.sans, letterSpacing: '0.04em',
@@ -897,11 +897,11 @@ function Recommendation({ data }) {
 
   return (
     <motion.div
+      className="rec-layout"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.35 }}
       style={{
-        margin: '-3rem -1.5rem',
         display: 'flex',
         height: 'calc(100vh - 56px)',
         background: G.bg,

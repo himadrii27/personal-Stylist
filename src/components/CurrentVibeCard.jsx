@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-const serif = '"Cormorant Garant", Georgia, serif';
+const serif = '"Instrument Serif", Georgia, serif';
 
 function getVibeLabel(sliders) {
   if (!sliders) return 'Balanced';
@@ -27,7 +27,7 @@ function CurrentVibeCard({ userPrefs, onEditProfile, children }) {
           <span style={{
             fontSize: '0.6rem', fontWeight: 700,
             letterSpacing: '0.18em', textTransform: 'uppercase',
-            color: 'rgba(240,240,240,0.3)', fontFamily: 'var(--font)',
+            color: 'rgba(13,13,11,0.3)', fontFamily: 'var(--font)',
           }}>
             Current Vibe
           </span>

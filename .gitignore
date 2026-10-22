@@ -64,3 +64,7 @@ CLAUDE.md
 !src/assets/**/*.jpg
 !src/assets/**/*.jpeg
 !src/assets/**/*.webp
+
+# segmentation eval data (VITON-HD, measurement only — not redistributed)
+eval/data/
+eval/models/

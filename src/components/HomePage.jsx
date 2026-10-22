@@ -1,644 +1,161 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import React, { lazy, Suspense } from 'react';
+import { motion, MotionConfig } from 'framer-motion';
+import LookbookHero from './LookbookHero';
+import DotText from './DotText';
+import StylingMatters from './StylingMatters';
+import FeaturesSection from './FeaturesSection';
 
-/* ── Design tokens (earthy luxury dark palette) ── */
+/* ════════════════════════════════════════════════
+   DESIGN TOKENS — warm editorial palette
+   Off-white ivories replace cold whites
+═══════════════════════════════════════════════════ */
 const C = {
-  bg:       '#0d0d0a',
-  bg2:      '#131310',
-  surface:  '#1a1a15',
-  surface2: '#222219',
-  border:   'rgba(255,255,255,0.07)',
-  borderHv: 'rgba(255,255,255,0.13)',
-  text:     '#e8e2d5',
-  text2:    '#8a8575',
-  text3:    '#57534a',
-  accent:   '#c9b99a',   /* warm beige/gold */
-  accentHv: '#d9ccb2',
-  pink:     '#FF6B9D',   /* app accent for primary CTAs */
+  bg:         '#F9F7F4',
+  bg2:        '#F4F1EC',
+  surface:    '#EDE9E2',
+  surface2:   '#E5E0D8',
+  text:       '#0d0d0b',
+  text2:      '#5c5549',
+  text3:      '#9a9183',
+  border:     '#DDD8CF',
+  borderHv:   '#BDB7AC',
+  dark:       '#0a0a0a',
+  darkSurf:   '#141414',
+  darkText:   '#f0f0f0',
+  darkText2:  'rgba(240,240,240,0.55)',
+  darkText3:  'rgba(240,240,240,0.28)',
 };
 
-const serif = '"Cormorant Garant", Georgia, serif';
-const sans  = 'var(--font)';
+// Map journey pulls in d3-geo + world data — keep it out of the hero's bundle
+const StoryMap = lazy(() => import('./StoryMap'));
 
-const fadeUp = {
-  hidden:  { opacity: 0, y: 24 },
-  visible: (i = 0) => ({ opacity: 1, y: 0, transition: { duration: 0.6, delay: i * 0.1, ease: [0.25, 0.46, 0.45, 0.94] } }),
-};
+const sans   = '"Inter", -apple-system, BlinkMacSystemFont, sans-serif';
+const serif  = '"Instrument Serif", Georgia, serif';
+const ACCENT = '#E2571A';
+
+const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
+
+/* ════════════════════════════════════════════════
+   TYPE + ANIMATION PRIMITIVES (Campione-inspired)
+═══════════════════════════════════════════════════ */
+const serifHeading = (fontSize, color = C.text) => ({
+  fontFamily: serif, fontWeight: 400, fontSize, color,
+  lineHeight: 0.95, letterSpacing: '-0.03em',
+});
+
+// Per-word 3D stagger reveal
+function AnimatedHeading({ text, style, delay = 0 }) {
+  const words = text.split(' ');
+  return (
+    <div style={{ display: 'block', lineHeight: 'inherit', ...style }}>
+      {words.map((word, i) => (
+        <React.Fragment key={i}>
+        {i > 0 && ' '}
+        <motion.span
+          initial={{ opacity: 0, rotateX: -30, rotateY: 20, y: 40 }}
+          whileInView={{ opacity: 1, rotateX: 0, rotateY: 0, y: 0 }}
+          viewport={{ once: true, margin: '-60px 0px' }}
+          transition={{ type: 'spring', bounce: 0.3, duration: 0.7, delay: delay + i * 0.1 }}
+          style={{
+            display: 'inline-block',
+            transformPerspective: 1500, transformOrigin: 'bottom center',
+          }}
+        >
+          {word}
+        </motion.span>
+        </React.Fragment>
+      ))}
+    </div>
+  );
+}
+
+const fadeUp = (delay = 0) => ({
+  initial:    { opacity: 0, y: 28 },
+  whileInView:{ opacity: 1, y: 0 },
+  viewport:   { once: true, margin: '-40px 0px' },
+  transition: { type: 'spring', bounce: 0.1, duration: 0.6, delay },
+});
+
+// "(How it works)" / "#Looks" style section label
+function SectionLabel({ children, dark = false, delay = 0 }) {
+  return (
+    <motion.p {...fadeUp(delay)} style={{
+      fontFamily: sans, fontSize: '0.75rem', fontWeight: 500,
+      letterSpacing: '0.04em', color: dark ? C.darkText3 : C.text3,
+      marginBottom: '1.25rem',
+    }}>
+      {children}
+    </motion.p>
+  );
+}
+
+function PrimaryButton({ children, onClick, style }) {
+  return (
+    <motion.button
+      onClick={onClick}
+      whileHover={{ scale: 1.03, y: -2 }}
+      whileTap={{ scale: 0.97 }}
+      transition={{ type: 'spring', bounce: 0.3, duration: 0.25 }}
+      style={{
+        background: ACCENT, color: '#fff', border: 'none', borderRadius: 999,
+        padding: '0.95rem 1.9rem', fontSize: '0.9375rem', fontWeight: 600,
+        fontFamily: sans, cursor: 'pointer', letterSpacing: '-0.01em',
+        boxShadow: '0 8px 28px rgba(226,87,26,0.28)',
+        ...style,
+      }}
+    >
+      {children}
+    </motion.button>
+  );
+}
 
 /* ════════════════════════════════════════════════
    NAVBAR
 ═══════════════════════════════════════════════════ */
-function Navbar({ onGetStarted }) {
-  const [scrolled, setScrolled] = useState(false);
-  const [menuOpen, setMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const fn = () => setScrolled(window.scrollY > 30);
-    window.addEventListener('scroll', fn, { passive: true });
-    return () => window.removeEventListener('scroll', fn);
-  }, []);
-
-  const scrollTo = (id) => {
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
-    setMenuOpen(false);
-  };
-
+function Navbar({ onGetStarted, onOpenWardrobe }) {
   return (
     <motion.nav
-      initial={{ opacity: 0, y: -10 }}
+      className="hp-nav"
+      initial={{ opacity: 0, y: -12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      style={{
-        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
-        background: scrolled ? 'rgba(13,13,10,0.88)' : 'rgba(13,13,10,0.4)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
-        borderBottom: scrolled ? `1px solid ${C.border}` : '1px solid transparent',
-        transition: 'all 0.35s ease',
-        padding: '0 2.5rem',
-      }}
+      transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
     >
-      <div style={{
-        maxWidth: 1200, margin: '0 auto',
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        height: 64,
-      }}>
-        {/* Logo */}
-        <span style={{ fontFamily: serif, fontSize: '1.25rem', fontWeight: 600, color: C.text, letterSpacing: '0.01em', cursor: 'default' }}>
-          Personal Stylist
-        </span>
-
-        {/* Nav links */}
-        <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-          {[
-            { label: 'Aesthetic Explorer', id: 'features' },
-            { label: 'Features', id: 'features' },
-            { label: 'Lookbook', id: 'wardrobe' },
-            { label: 'Pricing', id: 'cta' },
-          ].map(({ label, id }) => (
-            <button key={label} onClick={() => scrollTo(id)} style={{
-              background: 'none', border: 'none', cursor: 'pointer',
-              color: C.text2, fontSize: '0.875rem', fontWeight: 500,
-              fontFamily: sans, letterSpacing: '0.01em',
-              transition: 'color 0.2s',
-              padding: '4px 0',
-            }}
-              onMouseEnter={e => e.target.style.color = C.text}
-              onMouseLeave={e => e.target.style.color = C.text2}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-
-        {/* Right side */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          {/* Profile icon */}
-          <div style={{
-            width: 32, height: 32, borderRadius: '50%',
-            background: C.surface2, border: `1px solid ${C.border}`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            cursor: 'pointer',
-          }}>
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke={C.text2} strokeWidth="2">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-              <circle cx="12" cy="7" r="4"/>
-            </svg>
-          </div>
-          {/* CTA */}
-          <button
-            onClick={onGetStarted}
-            style={{
-              background: 'transparent',
-              border: `1px solid ${C.border}`,
-              color: C.text,
-              fontFamily: sans, fontSize: '0.8125rem', fontWeight: 600,
-              padding: '0.5rem 1.25rem', borderRadius: 8,
-              cursor: 'pointer', letterSpacing: '0.02em',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => { e.target.style.background = C.surface; e.target.style.borderColor = C.borderHv; }}
-            onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.borderColor = C.border; }}
-          >
-            Get Started
-          </button>
-        </div>
+      <button className="hp-nav-logo" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
+        Personal Stylist<span className="hp-nav-logo-mark" aria-hidden="true" />
+      </button>
+      <div className="hp-nav-cells">
+        {[
+          { label: 'Features',    id: 'features' },
+          { label: 'Story',       id: 'story' },
+          { label: 'Why styling', id: 'why-styling' },
+        ].map(({ label, id }) => (
+          <button key={id} className="hp-nav-cell hp-nav-links" onClick={() => scrollTo(id)}>{label}</button>
+        ))}
+        <button className="hp-nav-cell" onClick={onOpenWardrobe}>Wardrobe</button>
+        <button className="hp-nav-cell hp-nav-cta" onClick={onGetStarted}>Style my event</button>
       </div>
     </motion.nav>
   );
 }
 
 /* ════════════════════════════════════════════════
-   HERO SECTION
+   HERO — lookbook frame (photo tiles circling the headline)
 ═══════════════════════════════════════════════════ */
 function HeroSection({ onGetStarted }) {
-  return (
-    <section style={{
-      minHeight: '100vh',
-      background: `radial-gradient(ellipse 80% 60% at 60% 40%, rgba(50,44,35,0.45) 0%, ${C.bg} 65%)`,
-      display: 'flex', alignItems: 'center',
-      padding: '0 2.5rem',
-      paddingTop: 80,
-      overflow: 'hidden',
-    }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', width: '100%', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '4rem', alignItems: 'center' }}>
-
-        {/* Left: Text */}
-        <motion.div variants={{ visible: { transition: { staggerChildren: 0.1 } } }} initial="hidden" animate="visible">
-          <motion.p variants={fadeUp} custom={0} style={{
-            fontFamily: sans, fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.18em',
-            textTransform: 'uppercase', color: C.accent,
-            marginBottom: '1.5rem',
-          }}>
-            AI-Powered Fashion Intelligence
-          </motion.p>
-
-          <motion.h1 variants={fadeUp} custom={1} style={{
-            fontFamily: serif, fontWeight: 600, lineHeight: 1.06,
-            color: C.text, marginBottom: '1.75rem',
-          }}>
-            <span style={{ display: 'block', fontSize: 'clamp(2.5rem, 5vw, 4rem)', fontStyle: 'italic', fontWeight: 400 }}>
-              Your
-            </span>
-            <span style={{ display: 'block', fontSize: 'clamp(3rem, 6.5vw, 5.5rem)', fontWeight: 700 }}>
-              Personal Stylist
-            </span>
-          </motion.h1>
-
-          <motion.p variants={fadeUp} custom={2} style={{
-            fontFamily: sans, fontSize: '1.0625rem', color: C.text2,
-            lineHeight: 1.7, maxWidth: 440, marginBottom: '2.5rem',
-          }}>
-            Experience a high-end fashion magazine digital edition tailored
-            specifically to your unique silhouette and aesthetic preferences.
-          </motion.p>
-
-          <motion.div variants={fadeUp} custom={3} style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-            <button
-              onClick={onGetStarted}
-              style={{
-                background: C.text, color: C.bg,
-                border: 'none', borderRadius: 8,
-                padding: '0.875rem 2rem', fontSize: '0.9rem', fontWeight: 700,
-                fontFamily: sans, cursor: 'pointer', letterSpacing: '0.02em',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={e => { e.target.style.background = '#fff'; e.target.style.transform = 'translateY(-1px)'; }}
-              onMouseLeave={e => { e.target.style.background = C.text; e.target.style.transform = 'none'; }}
-            >
-              Begin Your Transformation
-            </button>
-            <button
-              onClick={() => document.getElementById('wardrobe')?.scrollIntoView({ behavior: 'smooth' })}
-              style={{
-                background: 'transparent', color: C.text2,
-                border: `1px solid ${C.border}`, borderRadius: 8,
-                padding: '0.875rem 2rem', fontSize: '0.9rem', fontWeight: 600,
-                fontFamily: sans, cursor: 'pointer', letterSpacing: '0.02em',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.color = C.text; e.currentTarget.style.borderColor = C.borderHv; }}
-              onMouseLeave={e => { e.currentTarget.style.color = C.text2; e.currentTarget.style.borderColor = C.border; }}
-            >
-              View Lookbook
-            </button>
-          </motion.div>
-        </motion.div>
-
-        {/* Right: Fashion photo */}
-        <motion.div
-          initial={{ opacity: 0, x: 30, scale: 0.97 }}
-          animate={{ opacity: 1, x: 0, scale: 1 }}
-          transition={{ duration: 0.8, delay: 0.25, ease: [0.25, 0.46, 0.45, 0.94] }}
-          style={{ position: 'relative' }}
-        >
-          {/* Main photo container */}
-          <div style={{
-            borderRadius: 20,
-            overflow: 'hidden',
-            aspectRatio: '4/5',
-            background: `linear-gradient(160deg, #2a2418 0%, #1a1512 50%, #231e15 100%)`,
-            border: `1px solid ${C.border}`,
-            position: 'relative',
-          }}>
-            <img
-              src="https://images.unsplash.com/photo-1529139574466-a303027c1d8b?auto=format&fit=crop&w=700&q=80"
-              alt="Editorial fashion portrait"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.9, display: 'block' }}
-              onError={e => { e.target.style.display = 'none'; }}
-            />
-            {/* Subtle overlay gradient at bottom */}
-            <div style={{
-              position: 'absolute', bottom: 0, left: 0, right: 0, height: '35%',
-              background: 'linear-gradient(to top, rgba(13,13,10,0.7), transparent)',
-              pointerEvents: 'none',
-            }} />
-          </div>
-
-          {/* Floating tag */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9, duration: 0.5 }}
-            style={{
-              position: 'absolute', bottom: 24, left: 24,
-              background: 'rgba(13,13,10,0.75)',
-              backdropFilter: 'blur(12px)',
-              border: `1px solid ${C.border}`,
-              borderRadius: 10, padding: '0.6rem 0.875rem',
-            }}
-          >
-            <p style={{ fontSize: '0.6875rem', color: C.accent, fontWeight: 700, letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 2 }}>Style Profile</p>
-            <p style={{ fontSize: '0.8125rem', color: C.text, fontWeight: 600 }}>Aesthetic Analysis Active</p>
-          </motion.div>
-        </motion.div>
-
-      </div>
-    </section>
-  );
-}
-
-/* ════════════════════════════════════════════════
-   FEATURES SECTION  (bento grid)
-═══════════════════════════════════════════════════ */
-const FEATURES = [
-  {
-    id: 'aesthetic',
-    title: 'Aesthetic Explorer',
-    desc: 'A soft, warm-toned lens that reveals hidden patterns in your style history, predicting your next favorite trend.',
-    img: 'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=800&q=80',
-    large: true,
-  },
-  {
-    id: 'color',
-    title: 'Color Theory',
-    desc: 'Analyzes wardrobe colors and seasonal palettes to ensure every piece resonates with your natural beauty.',
-    colors: ['#c4b49a', '#9b8c78', '#7a6e5c'],
-    large: false,
-  },
-  {
-    id: 'wardrobe',
-    title: 'Virtual Wardrobe',
-    desc: 'Digitize your entire closet and let AI suggest daily outfits based on weather and occasion.',
-    img: 'https://images.unsplash.com/photo-1469334031218-e382a71b716b?auto=format&fit=crop&w=500&q=80',
-    large: false,
-  },
-  {
-    id: 'lookbooks',
-    title: 'Curated Lookbooks',
-    desc: 'Weekly digital editions of your style journey, presented in a high-fashion editorial layout.',
-    large: false,
-  },
-];
-
-function FeatureCard({ feature, style }) {
-  const [hovered, setHovered] = useState(false);
+  const rise = (delay) => ({
+    initial:    { opacity: 0, y: 16 },
+    animate:    { opacity: 1, y: 0 },
+    transition: { type: 'spring', bounce: 0.15, duration: 0.8, delay },
+  });
 
   return (
-    <motion.div
-      variants={fadeUp}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      style={{
-        background: C.surface,
-        border: `1px solid ${hovered ? C.borderHv : C.border}`,
-        borderRadius: 16,
-        overflow: 'hidden',
-        transition: 'border-color 0.25s, transform 0.25s',
-        transform: hovered ? 'translateY(-2px)' : 'none',
-        position: 'relative',
-        ...style,
-      }}
-    >
-      {feature.img && (
-        <div style={{
-          height: feature.large ? 260 : 160,
-          background: `linear-gradient(135deg, #1e1c16, #2a271e)`,
-          overflow: 'hidden',
-          position: 'relative',
-        }}>
-          <img
-            src={feature.img}
-            alt={feature.title}
-            style={{
-              width: '100%', height: '100%', objectFit: 'cover',
-              opacity: hovered ? 0.75 : 0.6,
-              transition: 'opacity 0.4s, transform 0.5s',
-              transform: hovered ? 'scale(1.04)' : 'scale(1)',
-              display: 'block',
-            }}
-            onError={e => { e.target.style.display = 'none'; }}
-          />
-        </div>
-      )}
-
-      {feature.colors && (
-        <div style={{
-          height: 120, background: C.surface,
-          display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
-          padding: '0 1.5rem', gap: '0.75rem',
-        }}>
-          {feature.colors.map((c, i) => (
-            <div key={i} style={{
-              width: 36, height: 36, borderRadius: '50%', background: c,
-              boxShadow: `0 0 12px ${c}55`,
-              transition: 'transform 0.2s',
-              transform: hovered ? 'scale(1.1)' : 'scale(1)',
-              transitionDelay: `${i * 40}ms`,
-            }} />
-          ))}
-        </div>
-      )}
-
-      <div style={{ padding: '1.25rem 1.5rem', paddingBottom: '1.5rem' }}>
-        <p style={{ fontFamily: serif, fontSize: '1.2rem', fontWeight: 600, color: C.text, marginBottom: '0.5rem' }}>
-          {feature.title}
-        </p>
-        <p style={{ fontFamily: sans, fontSize: '0.8125rem', color: C.text2, lineHeight: 1.65 }}>
-          {feature.desc}
-        </p>
-        {feature.large && (
-          <p style={{
-            marginTop: '1.25rem', fontSize: '0.75rem', color: C.accent, fontWeight: 600,
-            letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer',
-          }}>
-            Explore →
-          </p>
-        )}
-      </div>
-    </motion.div>
-  );
-}
-
-function FeaturesSection() {
-  return (
-    <section id="features" style={{ padding: '7rem 2.5rem', background: C.bg }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        {/* Header */}
-        <motion.div
-          variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-80px' }}
-          style={{ marginBottom: '3.5rem' }}
-        >
-          <motion.p variants={fadeUp} style={{
-            fontFamily: sans, fontSize: '0.6875rem', fontWeight: 600,
-            letterSpacing: '0.18em', textTransform: 'uppercase', color: C.accent,
-            marginBottom: '0.75rem',
-          }}>
-            Curated tools designed to refine your personal brand
-          </motion.p>
-          <motion.h2 variants={fadeUp} style={{
-            fontFamily: serif, fontSize: 'clamp(2rem, 4vw, 3.25rem)',
-            fontWeight: 600, color: C.text, lineHeight: 1.1,
-          }}>
-            Sophisticated Features
-          </motion.h2>
-        </motion.div>
-
-        {/* Bento grid */}
-        <motion.div
-          variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-60px' }}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: '2fr 1fr',
-            gridTemplateRows: 'auto auto',
-            gap: '1.25rem',
-          }}
-        >
-          {/* Large left card */}
-          <FeatureCard feature={FEATURES[0]} style={{ gridRow: '1 / 3' }} />
-
-          {/* Right column */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-            <FeatureCard feature={FEATURES[1]} style={{}} />
-            <FeatureCard feature={FEATURES[2]} style={{}} />
-            <FeatureCard feature={FEATURES[3]} style={{}} />
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-/* ════════════════════════════════════════════════
-   WARDROBE MANAGEMENT SECTION
-═══════════════════════════════════════════════════ */
-const WARDROBE_FEATURES = [
-  {
-    num: '01',
-    title: 'Virtual Fitting',
-    desc: 'Try on curated pieces from world-renowned designers in a high-fidelity virtual environment using your precise digital twin.',
-  },
-  {
-    num: '02',
-    title: 'Style Evolution',
-    desc: 'Watch your aesthetic mature over time with longitudinal data tracking and progressive taste mapping.',
-  },
-  {
-    num: '03',
-    title: 'Global Trends',
-    desc: 'Real-time insights from Paris, Milan, and Tokyo filtered through your personal style lens.',
-  },
-];
-
-function WardrobeSection() {
-  return (
-    <section id="wardrobe" style={{ padding: '7rem 2.5rem', background: C.bg2 }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '5rem', alignItems: 'center' }}>
-
-        {/* Left: Text */}
-        <motion.div
-          variants={{ visible: { transition: { staggerChildren: 0.12 } } }}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-80px' }}
-        >
-          <motion.h2 variants={fadeUp} style={{
-            fontFamily: serif, fontSize: 'clamp(2rem, 4vw, 3.25rem)',
-            fontWeight: 600, color: C.text, lineHeight: 1.1,
-            marginBottom: '1rem',
-          }}>
-            The Future of<br />
-            <span style={{ fontStyle: 'italic', fontWeight: 400 }}>Wardrobe Management</span>
-          </motion.h2>
-
-          <motion.div variants={fadeUp} style={{ marginTop: '3rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-            {WARDROBE_FEATURES.map((f) => (
-              <div key={f.num} style={{ display: 'flex', gap: '1.25rem', alignItems: 'flex-start' }}>
-                <span style={{
-                  fontFamily: serif, fontSize: '0.8125rem', color: C.accent,
-                  fontWeight: 600, letterSpacing: '0.05em', minWidth: 24, marginTop: 2,
-                }}>
-                  {f.num}
-                </span>
-                <div>
-                  <p style={{ fontFamily: sans, fontSize: '0.9375rem', fontWeight: 700, color: C.text, marginBottom: '0.375rem' }}>
-                    {f.title}
-                  </p>
-                  <p style={{ fontFamily: sans, fontSize: '0.8125rem', color: C.text2, lineHeight: 1.65 }}>
-                    {f.desc}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </motion.div>
-        </motion.div>
-
-        {/* Right: Wardrobe image */}
-        <motion.div
-          initial={{ opacity: 0, x: 30 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
-          style={{ position: 'relative' }}
-        >
-          <div style={{
-            borderRadius: 20, overflow: 'hidden',
-            aspectRatio: '4/5',
-            background: `linear-gradient(160deg, #1e1c14, #2e2820)`,
-            border: `1px solid ${C.border}`,
-            position: 'relative',
-          }}>
-            <img
-              src="https://images.unsplash.com/photo-1558769132-cb1aea458c5e?auto=format&fit=crop&w=700&q=80"
-              alt="Organized wardrobe"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.8, display: 'block' }}
-              onError={e => { e.target.style.display = 'none'; }}
-            />
-            <div style={{
-              position: 'absolute', bottom: 0, left: 0, right: 0, height: '45%',
-              background: 'linear-gradient(to top, rgba(13,13,10,0.85), transparent)',
-              pointerEvents: 'none',
-            }} />
-          </div>
-
-          {/* Overlay recommendation card */}
-          <div style={{
-            position: 'absolute', bottom: 24, left: 24, right: 24,
-            background: 'rgba(13,13,10,0.78)',
-            backdropFilter: 'blur(16px)',
-            WebkitBackdropFilter: 'blur(16px)',
-            border: `1px solid ${C.border}`,
-            borderRadius: 12, padding: '0.875rem 1.125rem',
-            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          }}>
-            <div>
-              <p style={{ fontSize: '0.625rem', color: C.accent, fontWeight: 700, letterSpacing: '0.18em', textTransform: 'uppercase', marginBottom: 4 }}>
-                Weekly Recommendation
-              </p>
-              <p style={{ fontSize: '0.875rem', color: C.text, fontWeight: 600, fontFamily: serif }}>
-                Minimalist Fall Ensemble
-              </p>
-            </div>
-            <div style={{
-              width: 30, height: 30, borderRadius: '50%',
-              background: C.surface2, border: `1px solid ${C.border}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer',
-            }}>
-              <span style={{ color: C.text2, fontSize: '0.875rem', lineHeight: 1 }}>+</span>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-    </section>
-  );
-}
-
-/* ════════════════════════════════════════════════
-   EVENT OUTFIT GENERATOR SECTION
-═══════════════════════════════════════════════════ */
-function EventSection({ onGetStarted }) {
-  return (
-    <section id="event-gen" style={{ padding: '7rem 2.5rem', background: C.bg }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <motion.div
-          variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, margin: '-80px' }}
-          style={{ textAlign: 'center', marginBottom: '3.5rem' }}
-        >
-          <motion.p variants={fadeUp} style={{
-            fontFamily: sans, fontSize: '0.6875rem', fontWeight: 600,
-            letterSpacing: '0.18em', textTransform: 'uppercase', color: C.accent,
-            marginBottom: '0.75rem',
-          }}>
-            Event-Driven Intelligence
-          </motion.p>
-          <motion.h2 variants={fadeUp} style={{
-            fontFamily: serif, fontSize: 'clamp(2rem, 4vw, 3.25rem)',
-            fontWeight: 600, color: C.text, lineHeight: 1.1,
-          }}>
-            Dress Perfectly for Every Event
-          </motion.h2>
-          <motion.p variants={fadeUp} style={{
-            fontFamily: sans, fontSize: '1rem', color: C.text2, marginTop: '1rem',
-            maxWidth: 520, margin: '1rem auto 0',
-          }}>
-            Let AI analyze your event, venue, and wardrobe to suggest the perfect outfit.
-          </motion.p>
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-60px' }}
-          transition={{ duration: 0.6 }}
-          style={{
-            maxWidth: 760, margin: '0 auto',
-            background: C.surface,
-            border: `1px solid ${C.border}`,
-            borderRadius: 20, padding: '2.5rem',
-          }}
-        >
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1.25rem', marginBottom: '1.5rem' }}>
-            {[
-              { label: 'Event Type', options: ['Concert', 'Wedding', 'Office', 'Date Night', 'Party', 'Casual Hangout'] },
-              { label: 'Venue', options: ['Indoor', 'Outdoor', 'Rooftop', 'Beach', 'Club', 'Formal Hall'] },
-              { label: 'Time of Day', options: ['Day', 'Evening', 'Night'] },
-            ].map(({ label, options }) => (
-              <div key={label}>
-                <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: C.text2, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '0.5rem', fontFamily: sans }}>
-                  {label}
-                </label>
-                <select style={{
-                  width: '100%', background: C.surface2, color: C.text,
-                  border: `1px solid ${C.border}`, borderRadius: 8,
-                  padding: '0.6rem 0.875rem', fontFamily: sans, fontSize: '0.875rem',
-                  cursor: 'pointer', outline: 'none',
-                  appearance: 'none', WebkitAppearance: 'none',
-                }}>
-                  {options.map(o => <option key={o}>{o}</option>)}
-                </select>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'center' }}>
-            <button
-              onClick={onGetStarted}
-              style={{
-                background: C.text, color: C.bg,
-                border: 'none', borderRadius: 8,
-                padding: '0.875rem 2.5rem', fontSize: '0.9rem', fontWeight: 700,
-                fontFamily: sans, cursor: 'pointer', letterSpacing: '0.02em',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={e => { e.target.style.background = '#fff'; }}
-              onMouseLeave={e => { e.target.style.background = C.text; }}
-            >
-              Generate Outfit ✦
-            </button>
-          </div>
-        </motion.div>
-      </div>
-    </section>
+    <LookbookHero onGetStarted={onGetStarted}>
+      <motion.h1 {...rise(0.15)} className="hp-lb-word">
+        <DotText text="Stylist" color={ACCENT} />
+        <span className="hp-sr-only">Stylist — your AI stylist for every event</span>
+      </motion.h1>
+      <motion.p {...rise(0.3)} className="hp-lb-sub">Event / Colour / Wardrobe</motion.p>
+    </LookbookHero>
   );
 }
 
@@ -647,56 +164,42 @@ function EventSection({ onGetStarted }) {
 ═══════════════════════════════════════════════════ */
 function CTASection({ onGetStarted }) {
   return (
-    <section id="cta" style={{ padding: '5rem 2.5rem 7rem', background: C.bg2 }}>
+    <section style={{ padding: 'clamp(3rem, 6vw, 6rem) clamp(1rem, 4vw, 2.5rem) clamp(4.5rem, 10vw, 9rem)', background: C.bg }}>
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
         <motion.div
-          initial={{ opacity: 0, y: 24 }}
+          initial={{ opacity: 0, y: 32 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: '-80px' }}
-          transition={{ duration: 0.6 }}
+          viewport={{ once: true, margin: '-60px 0px' }}
+          transition={{ type: 'spring', bounce: 0.1, duration: 0.7 }}
           style={{
-            background: C.surface,
-            border: `1px solid ${C.border}`,
-            borderRadius: 24, padding: '5rem 3rem',
-            textAlign: 'center',
-            backgroundImage: `radial-gradient(ellipse 60% 70% at 50% 50%, rgba(201,185,154,0.06) 0%, transparent 70%)`,
+            background: C.dark, borderRadius: 16,
+            padding: 'clamp(4rem, 8vw, 7rem) clamp(1.5rem, 5vw, 4rem)',
+            textAlign: 'center', overflow: 'hidden', position: 'relative',
           }}
         >
-          <p style={{
-            fontFamily: sans, fontSize: '0.6875rem', fontWeight: 600,
-            letterSpacing: '0.18em', textTransform: 'uppercase', color: C.accent,
-            marginBottom: '1.25rem',
-          }}>
-            Begin Your Journey
-          </p>
-          <h2 style={{
-            fontFamily: serif, fontSize: 'clamp(2.25rem, 4.5vw, 3.75rem)',
-            fontWeight: 600, color: C.text, lineHeight: 1.1, marginBottom: '1.25rem',
-          }}>
-            Refine Your<br />
-            <span style={{ fontStyle: 'italic', fontWeight: 400 }}>Personal Brand</span>
-          </h2>
-          <p style={{
-            fontFamily: sans, fontSize: '1rem', color: C.text2,
-            maxWidth: 480, margin: '0 auto 2.5rem', lineHeight: 1.7,
-          }}>
-            Join a curated community of individuals who value the intersection of
-            technology and classic sophistication.
-          </p>
-          <button
-            onClick={onGetStarted}
-            style={{
-              background: 'transparent', color: C.text,
-              border: `1px solid ${C.borderHv}`, borderRadius: 8,
-              padding: '0.9rem 2.5rem', fontSize: '0.9rem', fontWeight: 600,
-              fontFamily: sans, cursor: 'pointer', letterSpacing: '0.04em',
-              transition: 'all 0.25s',
-            }}
-            onMouseEnter={e => { e.target.style.background = C.surface2; e.target.style.borderColor = C.accent; e.target.style.color = C.accent; }}
-            onMouseLeave={e => { e.target.style.background = 'transparent'; e.target.style.borderColor = C.borderHv; e.target.style.color = C.text; }}
-          >
-            Begin Your Consultation
-          </button>
+          <div style={{
+            position: 'absolute', inset: 0, pointerEvents: 'none',
+            background: 'radial-gradient(ellipse 60% 50% at 50% 60%, rgba(226,87,26,0.12) 0%, transparent 70%)',
+          }} />
+
+          <div style={{ position: 'relative' }}>
+            <SectionLabel dark>(Ready when you are)</SectionLabel>
+            <AnimatedHeading text="Got something" delay={0.1} style={{ ...serifHeading('clamp(3rem, 8vw, 7rem)', '#fff'), textAlign: 'center' }} />
+            <AnimatedHeading text="on the calendar?" delay={0.3} style={{ ...serifHeading('clamp(3rem, 8vw, 7rem)', ACCENT), fontStyle: 'italic', textAlign: 'center' }} />
+
+            <motion.p {...fadeUp(0.5)} style={{
+              fontFamily: sans, fontSize: '1rem', color: C.darkText2,
+              maxWidth: 440, margin: '1.75rem auto 2.75rem', lineHeight: 1.75,
+            }}>
+              Tell us the occasion. We'll handle the rest, top to toe, in your budget.
+            </motion.p>
+
+            <motion.div {...fadeUp(0.6)}>
+              <PrimaryButton onClick={onGetStarted} style={{ padding: '1.05rem 2.5rem', fontSize: '1rem' }}>
+                Style my event →
+              </PrimaryButton>
+            </motion.div>
+          </div>
         </motion.div>
       </div>
     </section>
@@ -708,36 +211,39 @@ function CTASection({ onGetStarted }) {
 ═══════════════════════════════════════════════════ */
 function Footer() {
   return (
-    <footer style={{
-      background: C.bg,
-      borderTop: `1px solid ${C.border}`,
-      padding: '2.25rem 2.5rem',
-    }}>
+    <footer style={{ background: C.bg, borderTop: `1px solid ${C.border}`, padding: '2rem clamp(1rem, 4vw, 2.5rem)' }}>
       <div style={{
         maxWidth: 1200, margin: '0 auto',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         flexWrap: 'wrap', gap: '1rem',
       }}>
-        <span style={{ fontFamily: serif, fontSize: '1.05rem', fontWeight: 600, color: C.text2 }}>
-          Personal Stylist
+        <span style={{ fontFamily: serif, fontSize: '1.25rem', color: C.text, letterSpacing: '-0.02em' }}>
+          Personal Stylist<span style={{ color: ACCENT }}>.</span>
         </span>
 
         <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap' }}>
-          {['Privacy', 'Terms', 'Press', 'Contact'].map(link => (
-            <a key={link} href="#" style={{
-              fontFamily: sans, fontSize: '0.8125rem', color: C.text3,
-              textDecoration: 'none', transition: 'color 0.2s',
-            }}
-              onMouseEnter={e => e.target.style.color = C.text2}
-              onMouseLeave={e => e.target.style.color = C.text3}
+          {[
+            { label: 'Features',     id: 'features' },
+            { label: 'Story',        id: 'story' },
+            { label: 'Why styling',  id: 'why-styling' },
+          ].map(({ label, id }) => (
+            <button
+              key={id}
+              onClick={() => scrollTo(id)}
+              style={{
+                background: 'none', border: 'none', padding: 0, cursor: 'pointer',
+                fontFamily: sans, fontSize: '0.8125rem', color: C.text3, transition: 'color 0.2s',
+              }}
+              onMouseEnter={e => e.currentTarget.style.color = C.text2}
+              onMouseLeave={e => e.currentTarget.style.color = C.text3}
             >
-              {link}
-            </a>
+              {label}
+            </button>
           ))}
         </div>
 
         <p style={{ fontFamily: sans, fontSize: '0.75rem', color: C.text3 }}>
-          © 2026 Personal Stylist AI Digital Edition
+          © 2026 Personal Stylist · Powered by Gemini
         </p>
       </div>
     </footer>
@@ -745,18 +251,24 @@ function Footer() {
 }
 
 /* ════════════════════════════════════════════════
-   ROOT COMPONENT
+   ROOT EXPORT
 ═══════════════════════════════════════════════════ */
-export default function HomePage({ onGetStarted }) {
+export default function HomePage({ onGetStarted, onOpenWardrobe }) {
   return (
-    <div style={{ background: C.bg, minHeight: '100vh', overflowX: 'hidden' }}>
-      <Navbar onGetStarted={onGetStarted} />
-      <HeroSection onGetStarted={onGetStarted} />
-      <FeaturesSection />
-      <EventSection onGetStarted={onGetStarted} />
-      <WardrobeSection />
-      <CTASection onGetStarted={onGetStarted} />
-      <Footer />
-    </div>
+    <MotionConfig reducedMotion="user">
+      <div className="hp-root" style={{ background: C.bg, minHeight: '100vh', overflowX: 'clip' }}>
+        <Navbar onGetStarted={onGetStarted} onOpenWardrobe={onOpenWardrobe} />
+        <HeroSection onGetStarted={onGetStarted} />
+        <FeaturesSection onGetStarted={onGetStarted} onOpenWardrobe={onOpenWardrobe} />
+        <section id="story">
+          <Suspense fallback={<div style={{ height: '100vh', background: '#F3EDE2' }} />}>
+            <StoryMap onGetStarted={onGetStarted} />
+          </Suspense>
+        </section>
+        <StylingMatters onGetStarted={onGetStarted} />
+        <CTASection onGetStarted={onGetStarted} />
+        <Footer />
+      </div>
+    </MotionConfig>
   );
 }

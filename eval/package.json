@@ -1,0 +1,14 @@
+{
+  "name": "personalstylist-eval",
+  "private": true,
+  "type": "module",
+  "description": "Background-removal accuracy evaluation. Not part of the app: install only when re-running it.",
+  "scripts": {
+    "eval": "cd .. && node eval/run-all.mjs"
+  },
+  "dependencies": {
+    "jpeg-js": "^0.4.4",
+    "onnxruntime-node": "^1.30.0",
+    "pngjs": "^7.0.0"
+  }
+}
