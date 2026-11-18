@@ -112,7 +112,7 @@ function PrimaryButton({ children, onClick, style }) {
 /* ════════════════════════════════════════════════
    NAVBAR
 ═══════════════════════════════════════════════════ */
-function Navbar({ onGetStarted, onOpenWardrobe }) {
+function Navbar({ onGetStarted, onOpenWardrobe, onOpenColours }) {
   return (
     <motion.nav
       className="hp-nav"
@@ -129,10 +129,13 @@ function Navbar({ onGetStarted, onOpenWardrobe }) {
           { label: 'Story',       id: 'story' },
           { label: 'Why styling', id: 'why-styling' },
         ].map(({ label, id }) => (
-          <button key={id} className="hp-nav-cell hp-nav-links" onClick={() => scrollTo(id)}>{label}</button>
+          <button key={id} className="hp-nav-cell hp-nav-sections" onClick={() => scrollTo(id)}>{label}</button>
         ))}
+        <button className="hp-nav-cell" onClick={onOpenColours}>Colours</button>
         <button className="hp-nav-cell" onClick={onOpenWardrobe}>Wardrobe</button>
-        <button className="hp-nav-cell hp-nav-cta" onClick={onGetStarted}>Style my event</button>
+        <button className="hp-nav-cell hp-nav-cta" onClick={onGetStarted} aria-label="Style my event">
+          <span className="hp-nav-long">Style my event</span><span className="hp-nav-short" aria-hidden="true">Event</span>
+        </button>
       </div>
     </motion.nav>
   );
@@ -253,13 +256,13 @@ function Footer() {
 /* ════════════════════════════════════════════════
    ROOT EXPORT
 ═══════════════════════════════════════════════════ */
-export default function HomePage({ onGetStarted, onOpenWardrobe }) {
+export default function HomePage({ onGetStarted, onOpenWardrobe, onOpenColours }) {
   return (
     <MotionConfig reducedMotion="user">
       <div className="hp-root" style={{ background: C.bg, minHeight: '100vh', overflowX: 'clip' }}>
-        <Navbar onGetStarted={onGetStarted} onOpenWardrobe={onOpenWardrobe} />
+        <Navbar onGetStarted={onGetStarted} onOpenWardrobe={onOpenWardrobe} onOpenColours={onOpenColours} />
         <HeroSection onGetStarted={onGetStarted} />
-        <FeaturesSection onGetStarted={onGetStarted} onOpenWardrobe={onOpenWardrobe} />
+        <FeaturesSection onGetStarted={onGetStarted} onOpenWardrobe={onOpenWardrobe} onOpenColours={onOpenColours} />
         <section id="story">
           <Suspense fallback={<div style={{ height: '100vh', background: '#F3EDE2' }} />}>
             <StoryMap onGetStarted={onGetStarted} />
