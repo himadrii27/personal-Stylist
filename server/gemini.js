@@ -23,6 +23,7 @@ Gender Expression: {{gender}}
 Clothing Gender: {{clothing_gender}}
 Style Energy: {{style_energy}}
 Color Mood: {{color_mood}}
+Personal Colour Palette: {{palette}}
 
 EVENT DETAILS
 
@@ -103,6 +104,9 @@ clothing_options:
 CRITICAL: All clothing items MUST be appropriate for the Clothing Gender specified above. If Clothing Gender is "Men's", recommend men's clothing only (shirts, trousers, suits, etc). If "Women's", recommend women's clothing only. Never mix genders.
 For EACH category (top, bottom, outerwear, footwear), provide exactly 4 distinct options that all match the user's style and the event. Options should vary in style intensity — one safe, one balanced, one bold, one editorial/avant-garde.
 
+Personal Colour Palette:
+If a palette is given (not "Not analysed"), it was read from the user's own face. Build every option mainly from its best colours and neutrals, especially tops, outerwear and anything worn near the face; never use its "avoid" colours near the face. Name the colour in each item (e.g. "rust overshirt"). Treat Color Mood as the overall mood within that palette, and suggest jewellery in the palette's metal.
+
 Mandatory Accessories:
 Items that elevate the outfit and match the event vibe.
 
@@ -139,9 +143,18 @@ function genderToClothingLabel(gender) {
   return 'Unisex/Gender-neutral';
 }
 
+// colour season from the on-device face reading (see src/colour/seasons.js → paletteForPrompt)
+function describePalette(p) {
+  if (!p || typeof p !== 'object') return 'Not analysed';
+  const list = (v) => (Array.isArray(v) ? v.slice(0, 16).map(x => clip(x, 30)).filter(Boolean).join(', ') : '');
+  const season = clip(p.season, 40);
+  if (!season) return 'Not analysed';
+  return `${season} season. Best colours: ${list(p.best) || 'n/a'}. Avoid near the face: ${list(p.avoid) || 'n/a'}. Metal: ${clip(p.metal, 40) || 'n/a'}.`;
+}
+
 const OCCASION_FIELDS = ['occasion', 'time', 'weather', 'location', 'venue', 'artist', 'styleEnergy', 'colorMood'];
 
-function buildPrompt(userPrefs = {}, occasionData = {}) {
+function buildPrompt(userPrefs = {}, occasionData = {}, palette = null) {
   const sliders = userPrefs.sliders || {};
   const age = clip(userPrefs.age), gender = clip(userPrefs.gender);
   const { occasion, time, weather, location, venue, artist, styleEnergy, colorMood } =
@@ -158,6 +171,7 @@ function buildPrompt(userPrefs = {}, occasionData = {}) {
     .replace('{{clothing_gender}}', genderToClothingLabel(gender))
     .replace('{{style_energy}}',    styleEnergy || 'Not specified')
     .replace('{{color_mood}}',      colorMood || 'Not specified')
+    .replace('{{palette}}',         describePalette(palette))
     .replace('{{occasion}}',        occasion || 'Casual outing')
     .replace('{{time_of_day}}',     time || 'Day')
     .replace('{{weather}}',         weather || 'Sunny')
@@ -166,12 +180,12 @@ function buildPrompt(userPrefs = {}, occasionData = {}) {
     .replace('{{artist_theme}}',    artist || 'None');
 }
 
-export async function getGeminiOutfit(apiKey, userPrefs, occasionData) {
+export async function getGeminiOutfit(apiKey, userPrefs, occasionData, palette) {
   if (!apiKey || apiKey === 'your_gemini_api_key_here') {
     throw new Error('Gemini API key not configured. Add GEMINI_API_KEY to your .env file.');
   }
 
-  const prompt = buildPrompt(userPrefs, occasionData);
+  const prompt = buildPrompt(userPrefs, occasionData, palette);
   const body = JSON.stringify({
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: { temperature: 0.8, topK: 40, topP: 0.95, maxOutputTokens: 8192, responseMimeType: 'application/json' },

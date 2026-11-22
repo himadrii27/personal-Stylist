@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CurrentVibeCard from './components/CurrentVibeCard';
 import Preferences from './components/Preferences';
@@ -7,6 +7,10 @@ import Recommendation from './components/Recommendation';
 import HomePage from './components/HomePage';
 import WardrobePage from './wardrobe/WardrobePage';
 import { getGeminiOutfit } from './utils/geminiService';
+import { loadPalette, savePalette, clearPalette, paletteForPrompt, seasonById } from './colour/seasons';
+
+// the colour page pulls in MediaPipe, so it only loads when opened
+const ColourPage = lazy(() => import('./colour/ColourPage'));
 
 const pageVariants = {
   initial: { opacity: 0, y: 12 },
@@ -16,7 +20,8 @@ const pageVariants = {
 
 function App() {
   const [appStarted, setAppStarted] = useState(false);
-  const [section, setSection] = useState('event');          // 'event' | 'wardrobe' once inside the app
+  const [section, setSection] = useState('event');          // 'event' | 'wardrobe' | 'colours' once inside the app
+  const [palette, setPalette] = useState(loadPalette);       // saved colour-season result, or null
   const [startOccasion, setStartOccasion] = useState(null);
 
   const [userPrefs, setUserPrefs] = useState(() => {
@@ -46,7 +51,7 @@ function App() {
     setError(null);
     setRecommendation(null);
     try {
-      const result = await getGeminiOutfit(userPrefs, occasionData);
+      const result = await getGeminiOutfit(userPrefs, occasionData, paletteForPrompt(palette));
       setRecommendation({ ...result, gender: userPrefs.gender });
       setView('recommendation');
     } catch (err) {
@@ -65,11 +70,39 @@ function App() {
       <HomePage
         onGetStarted={(occ) => { setStartOccasion(typeof occ === 'string' ? occ : null); setSection('event'); setAppStarted(true); }}
         onOpenWardrobe={() => { setSection('wardrobe'); setAppStarted(true); }}
+        onOpenColours={() => { setSection('colours'); setAppStarted(true); }}
       />
     );
   }
 
   const goHome = () => { setAppStarted(false); setRecommendation(null); setView('form'); setError(null); };
+
+  if (section === 'colours') {
+    return (
+      <>
+        <nav className="hp-nav">
+          <button className="hp-nav-logo" onClick={goHome}>
+            Personal Stylist<span className="hp-nav-logo-mark" aria-hidden="true" />
+          </button>
+          <div className="hp-nav-cells">
+            <button className="hp-nav-cell hp-nav-links" onClick={goHome}>← Home</button>
+            <button className="hp-nav-cell" onClick={() => setSection('wardrobe')}>Wardrobe</button>
+            <button className="hp-nav-cell hp-nav-cta" onClick={() => setSection('event')}>Style my event</button>
+          </div>
+        </nav>
+        <main style={{ paddingTop: 56, minHeight: '100vh' }}>
+          <Suspense fallback={<p className="wd-msg" style={{ padding: '3rem 1.5rem', textAlign: 'center' }}>Opening…</p>}>
+            <ColourPage
+              palette={palette}
+              onSave={(p) => { savePalette(p); setPalette(p); }}
+              onForget={() => { clearPalette(); setPalette(null); }}
+              onStyleEvent={() => setSection('event')}
+            />
+          </Suspense>
+        </main>
+      </>
+    );
+  }
 
   if (section === 'wardrobe') {
     return (
@@ -159,6 +192,7 @@ function App() {
                     </button>
                   </motion.div>
                 )}
+                <PaletteNote palette={palette} onOpen={() => setSection('colours')} />
                 <CurrentVibeCard userPrefs={userPrefs} onEditProfile={() => { setUserPrefs(null); setRecommendation(null); setView('form'); }}>
                   <OccasionForm onSubmit={generateRecommendation} isLoading={isLoading} initialOccasion={startOccasion} />
                 </CurrentVibeCard>
@@ -203,6 +237,28 @@ function App() {
         </div>
       </section>
     </>
+  );
+}
+
+// one line above the brief: whether outfits will use the person's colour season
+function PaletteNote({ palette, onOpen }) {
+  const season = palette && seasonById(palette.seasonId);
+  return (
+    <button type="button" className="cl-note" onClick={onOpen}>
+      {season ? (
+        <>
+          <span className="cl-note-dots" aria-hidden="true">{season.best.slice(0, 5).map(c => <span key={c.hex} style={{ background: c.hex }} />)}</span>
+          <span>Dressing you in your <strong>{season.name}</strong> colours</span>
+          <span className="cl-note-go">View →</span>
+        </>
+      ) : (
+        <>
+          <span className="cl-note-dots" aria-hidden="true">{['#B5542C', '#5B7DB1', '#E5007E', '#8EA38E', '#F6C9A8'].map(c => <span key={c} style={{ background: c }} />)}</span>
+          <span>Want outfits in the colours that suit you?</span>
+          <span className="cl-note-go">Find my colours →</span>
+        </>
+      )}
+    </button>
   );
 }
 

@@ -306,12 +306,13 @@ const FEATURES = [
     cta: 'Style my event →',
   },
   {
-    key: 'colours', status: 'soon', Screen: ColourScreen, dark: true, word: 'Colour',
+    key: 'colours', status: 'live', Screen: ColourScreen, dark: true, word: 'Colour',
     bg: '#B4532E', fg: '#FBF3EC', sub: 'rgba(251,243,236,0.78)', line: 'rgba(251,243,236,0.28)',
     photo: '/features/colour.jpg', photoAlt: 'A fabric swatch book and colour fan in warm autumn tones', photoPos: '62% 50%', caption: 'Fig. 02 — Your palette, read from you',
     title: 'Know your colours',
-    copy: 'Take a photo of your face. Find the shades that make you glow.',
-    points: ['Snap or upload a selfie', 'We read your undertone', 'Get your season & best colours'],
+    copy: 'Look into your camera. We read your face live and find the shades that make you glow.',
+    points: ['Live scan, on your device', 'We read your undertone, depth & contrast', 'Get your season & best colours'],
+    cta: 'Find my colours →',
   },
   {
     key: 'wardrobe', status: 'live', Screen: WardrobeScreen, word: 'Wardrobe',
@@ -420,10 +421,10 @@ function RevealWords({ text, color, delay = 0 }) {
   );
 }
 
-export default function FeaturesSection({ onGetStarted, onOpenWardrobe }) {
+export default function FeaturesSection({ onGetStarted, onOpenWardrobe, onOpenColours }) {
   const reduce = useReducedMotion();
   const narrow = useNarrow();
-  const actions = { event: () => onGetStarted(), wardrobe: () => onOpenWardrobe?.() };
+  const actions = { event: () => onGetStarted(), colours: () => onOpenColours?.(), wardrobe: () => onOpenWardrobe?.() };
 
   return (
     <section id="features" style={{ background: C.bg, position: 'relative' }}>
