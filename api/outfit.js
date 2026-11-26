@@ -1,5 +1,5 @@
 import { getGeminiOutfit } from '../server/gemini.js';
 import { postHandler } from '../server/http.js';
 
-export const POST = postHandler(({ userPrefs, occasionData, palette }) =>
-  getGeminiOutfit(process.env.GEMINI_API_KEY, userPrefs, occasionData, palette));
+export const POST = postHandler(({ userPrefs, occasionData, palette, wardrobe }) =>
+  getGeminiOutfit(process.env.GEMINI_API_KEY, userPrefs, occasionData, palette, wardrobe));

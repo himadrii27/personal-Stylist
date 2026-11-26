@@ -25,6 +25,10 @@ Style Energy: {{style_energy}}
 Color Mood: {{color_mood}}
 Personal Colour Palette: {{palette}}
 
+USER'S WARDROBE (pieces they already own; ref: name (category, colour, warmth, dressiness))
+
+{{wardrobe}}
+
 EVENT DETAILS
 
 Occasion: {{occasion}}
@@ -50,6 +54,7 @@ Return the response in JSON format:
 {
   "outfit_name": "",
   "outfit_description": "",
+  "from_wardrobe": { "top": "", "bottom": "", "outerwear": "", "footwear": "", "accessories": [] },
   "style_tags": ["", "", "", ""],
   "clothing_options": {
     "top": [
@@ -107,6 +112,10 @@ For EACH category (top, bottom, outerwear, footwear), provide exactly 4 distinct
 Personal Colour Palette:
 If a palette is given (not "Not analysed"), it was read from the user's own face. Build every option mainly from its best colours and neutrals, especially tops, outerwear and anything worn near the face; never use its "avoid" colours near the face. Name the colour in each item (e.g. "rust overshirt"). Treat Color Mood as the overall mood within that palette, and suggest jewellery in the palette's metal.
 
+From Wardrobe:
+If a wardrobe is listed (not "None"), dress the user from it FIRST. For each of top, bottom, outerwear and footwear, give the ref (e.g. "w3") of the owned piece that best suits this event, weather, style profile and colour palette, or "" when nothing owned fits well — never force a bad fit. A dress goes in "top" and then "bottom" must be "". Shoes go in "footwear". "accessories" may hold up to 2 refs of owned accessories. Use only refs from the list, each once, matching its category. Leave outerwear "" if the weather doesn't need a layer. If the wardrobe is "None", return every field as "" and accessories as [].
+When a category is filled from the wardrobe, its 4 clothing_options are alternatives that would pair with the owned pieces. outfit_name and outfit_description describe the whole look, naming the owned pieces.
+
 Mandatory Accessories:
 Items that elevate the outfit and match the event vibe.
 
@@ -152,9 +161,48 @@ function describePalette(p) {
   return `${season} season. Best colours: ${list(p.best) || 'n/a'}. Avoid near the face: ${list(p.avoid) || 'n/a'}. Metal: ${clip(p.metal, 40) || 'n/a'}.`;
 }
 
+// the user's own pieces, as refs the browser maps back to its IndexedDB ids
+const WARDROBE_CATS = ['top', 'dress', 'outerwear', 'bottom', 'shoes', 'accessory'];
+const REF = /^w\d{1,3}$/;
+function cleanWardrobe(w) {
+  if (!Array.isArray(w)) return [];
+  const oneOf = (v, list) => (list.includes(v) ? v : '');
+  const seen = new Set();
+  return w.slice(0, 60).map(p => ({
+    ref: REF.test(p?.ref) ? p.ref : '',
+    name: clip(p?.name, 40).replace(/[\r\n]+/g, ' '),
+    category: oneOf(p?.category, WARDROBE_CATS),
+    colour: clip(p?.colour, 24).replace(/[\r\n]+/g, ' '),
+    warmth: oneOf(p?.warmth, ['light', 'mid', 'warm']),
+    dressiness: oneOf(p?.dressiness, ['casual', 'smart', 'dressy']),
+  })).filter(p => p.ref && p.category && !seen.has(p.ref) && seen.add(p.ref));
+}
+function describeWardrobe(list) {
+  if (!list.length) return 'None';
+  return list.map(p => `${p.ref}: ${p.name || 'piece'} (${p.category}, ${p.colour || 'unknown colour'}, ${p.warmth || 'mid'}, ${p.dressiness || 'casual'})`).join('\n');
+}
+const SLOT_CATS = { top: ['top', 'dress'], bottom: ['bottom'], outerwear: ['outerwear'], footwear: ['shoes'] };
+/** Keep only refs that exist, sit in the right slot and are used once; a dress clears the bottom. */
+export function cleanPicks(picks, list) {
+  const byRef = Object.fromEntries(list.map(p => [p.ref, p]));
+  const used = new Set();
+  const take = (ref, cats) => {
+    const p = typeof ref === 'string' && byRef[ref.trim()];
+    if (!p || !cats.includes(p.category) || used.has(p.ref)) return '';
+    used.add(p.ref);
+    return p.ref;
+  };
+  const out = Object.fromEntries(Object.entries(SLOT_CATS).map(([slot, cats]) => [slot, take(picks?.[slot], cats)]));
+  if (out.top && byRef[out.top].category === 'dress') { if (out.bottom) used.delete(out.bottom); out.bottom = ''; }
+  out.accessories = (Array.isArray(picks?.accessories) ? picks.accessories : []).map(r => take(r, ['accessory'])).filter(Boolean).slice(0, 2);
+  return out;
+}
+
+export { buildPrompt, cleanWardrobe };
+
 const OCCASION_FIELDS = ['occasion', 'time', 'weather', 'location', 'venue', 'artist', 'styleEnergy', 'colorMood'];
 
-function buildPrompt(userPrefs = {}, occasionData = {}, palette = null) {
+function buildPrompt(userPrefs = {}, occasionData = {}, palette = null, wardrobe = []) {
   const sliders = userPrefs.sliders || {};
   const age = clip(userPrefs.age), gender = clip(userPrefs.gender);
   const { occasion, time, weather, location, venue, artist, styleEnergy, colorMood } =
@@ -172,6 +220,7 @@ function buildPrompt(userPrefs = {}, occasionData = {}, palette = null) {
     .replace('{{style_energy}}',    styleEnergy || 'Not specified')
     .replace('{{color_mood}}',      colorMood || 'Not specified')
     .replace('{{palette}}',         describePalette(palette))
+    .replace('{{wardrobe}}',        describeWardrobe(wardrobe))
     .replace('{{occasion}}',        occasion || 'Casual outing')
     .replace('{{time_of_day}}',     time || 'Day')
     .replace('{{weather}}',         weather || 'Sunny')
@@ -180,12 +229,13 @@ function buildPrompt(userPrefs = {}, occasionData = {}, palette = null) {
     .replace('{{artist_theme}}',    artist || 'None');
 }
 
-export async function getGeminiOutfit(apiKey, userPrefs, occasionData, palette) {
+export async function getGeminiOutfit(apiKey, userPrefs, occasionData, palette, rawWardrobe) {
   if (!apiKey || apiKey === 'your_gemini_api_key_here') {
     throw new Error('Gemini API key not configured. Add GEMINI_API_KEY to your .env file.');
   }
 
-  const prompt = buildPrompt(userPrefs, occasionData, palette);
+  const wardrobe = cleanWardrobe(rawWardrobe);
+  const prompt = buildPrompt(userPrefs, occasionData, palette, wardrobe);
   const body = JSON.stringify({
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: { temperature: 0.8, topK: 40, topP: 0.95, maxOutputTokens: 8192, responseMimeType: 'application/json' },
@@ -221,7 +271,9 @@ export async function getGeminiOutfit(apiKey, userPrefs, occasionData, palette) 
 
     try {
       const clean = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '').trim();
-      return JSON.parse(clean);
+      const outfit = JSON.parse(clean);
+      if (outfit && typeof outfit === 'object') outfit.from_wardrobe = cleanPicks(outfit.from_wardrobe, wardrobe);
+      return outfit;
     } catch {
       console.error(`[Gemini] ${model} JSON parse failed. Raw text:`, text);
       throw new Error('Gemini returned invalid JSON. Please try again.');

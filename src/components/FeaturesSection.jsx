@@ -319,8 +319,8 @@ const FEATURES = [
     bg: '#16212A', fg: '#F4EFE6', sub: 'rgba(244,239,230,0.72)', line: 'rgba(244,239,230,0.2)',
     photo: '/features/wardrobe.jpg', photoAlt: 'A minimal rail of neutral-toned clothes', photoPos: '50% 70%', caption: 'Fig. 03 — Everything you own, in one place',
     title: 'Virtual wardrobe',
-    copy: 'Photograph what you own. We cut it out and hang it in your digital wardrobe.',
-    points: ['Take or upload a photo', 'Background removed on your device', 'Everything hanging in one place'],
+    copy: 'Photograph what you own. Then get outfits for today and for events, built from your own clothes.',
+    points: ['Cut out on your device, hung in one place', '“What do I wear today?” from your pieces', 'See what suits you, what to buy & what you wear'],
     cta: 'Open my wardrobe →',
   },
 ];

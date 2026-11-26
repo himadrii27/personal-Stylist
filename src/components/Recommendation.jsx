@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Shirt, Layers, Wind, Footprints,
   ShoppingBag, ShoppingCart, ExternalLink, Loader2, Check, Plus, Sparkles,
-  Battery, Droplets, Sun, Umbrella, Package,
+  Battery, Droplets, Sun, Umbrella, Package, Shirt as ShirtIcon,
 } from 'lucide-react';
 import { generateOutfitImage } from '../utils/geminiService';
 import { searchAllCategories } from '../utils/productSearchService';
@@ -59,7 +59,7 @@ function getSurvivalIcon(item) {
 }
 
 /* ── LEFT PANEL ──────────────────────────────────────────────────── */
-function LeftPanel({ data, selections }) {
+function LeftPanel({ data, selections, owned }) {
   const [expanded, setExpanded] = useState(false);
   const {
     outfit_name, outfit_description, style_tags = [],
@@ -176,7 +176,7 @@ function LeftPanel({ data, selections }) {
                       fontSize: '0.65rem', color: G.text, fontWeight: 500,
                       fontFamily: G.sans, lineHeight: 1.3,
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>{item.name}</p>
+                    }}>{item.isOwned && <span style={{ color: G.gold, fontWeight: 700, fontSize: '0.5rem', letterSpacing: '0.08em', marginRight: 4 }}>YOURS</span>}{item.name}</p>
                   ))}
                 </div>
               </div>
@@ -186,10 +186,15 @@ function LeftPanel({ data, selections }) {
       </div>
 
       {/* ── 3. Accessories ── */}
-      {mandatory_accessories.length > 0 && (
+      {(mandatory_accessories.length > 0 || owned?.accessories?.length > 0) && (
         <div>
           <DividerLabel>Accessories</DividerLabel>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+            {(owned?.accessories || []).map(a => (
+              <span key={a.id} style={{ fontSize: '0.62rem', color: G.text, background: 'rgba(226,87,26,0.07)', border: '1px solid rgba(226,87,26,0.3)', borderRadius: 999, padding: '2px 8px', fontFamily: G.sans }}>
+                <strong style={{ color: G.gold, fontSize: '0.5rem', letterSpacing: '0.08em', marginRight: 4 }}>YOURS</strong>{a.name}
+              </span>
+            ))}
             {mandatory_accessories.map((a, i) => (
               <span key={i} style={{
                 fontSize: '0.62rem', color: G.textDim,
@@ -423,6 +428,34 @@ function AISuggestionCard({ option, selected, onSelect }) {
   );
 }
 
+/* ── A piece the user already owns (from their wardrobe) ──────────── */
+function OwnedCard({ item, url, selected, onSelect }) {
+  return (
+    <motion.div
+      onClick={() => onSelect(item)}
+      whileHover={{ y: -1 }}
+      role="button" tabIndex={0} aria-pressed={selected}
+      onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(item); } }}
+      style={{
+        display: 'flex', gap: '0.75rem', alignItems: 'center',
+        background: selected ? 'rgba(226,87,26,0.06)' : G.surfaceL,
+        border: `1px solid ${selected ? 'rgba(226,87,26,0.45)' : 'rgba(43,38,32,0.1)'}`,
+        borderRadius: 12, padding: '0.6rem', cursor: 'pointer', position: 'relative', transition: 'all 0.2s',
+      }}
+    >
+      <div style={{ width: 72, height: 72, flexShrink: 0, borderRadius: 9, background: '#F1EBE1', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        {url ? <img src={url} alt="" style={{ maxWidth: '86%', maxHeight: '86%', objectFit: 'contain', filter: 'drop-shadow(0 4px 6px rgba(40,28,15,0.2))' }} />
+          : <span style={{ width: 36, height: 36, borderRadius: 8, background: item.colour?.hex }} />}
+      </div>
+      <div style={{ minWidth: 0 }}>
+        <span style={{ display: 'inline-block', background: G.gold, color: '#fff', fontSize: '0.5rem', fontWeight: 800, letterSpacing: '0.12em', padding: '2px 6px', borderRadius: 3, fontFamily: G.sans, marginBottom: 4 }}>YOURS</span>
+        <p style={{ fontFamily: G.serif, fontSize: '1rem', color: G.text, lineHeight: 1.2, marginBottom: 2 }}>{item.name}</p>
+        <p style={{ fontSize: '0.65rem', color: G.textFaint, fontFamily: G.sans }}>From your wardrobe{selected ? ' · in this look' : ' · tap to add back'}</p>
+      </div>
+    </motion.div>
+  );
+}
+
 /* ── Real product card ───────────────────────────────────────────── */
 function ProductCard({ product, selected, onSelect }) {
   const hasUrl = product.url && product.url !== '#';
@@ -522,9 +555,14 @@ function ProductCard({ product, selected, onSelect }) {
 }
 
 /* ── RIGHT PANEL ─────────────────────────────────────────────────── */
-function RightPanel({ data, selections, onSelect, onCheckout, activeBudget, setActiveBudget, shopResults, shopLoading, shopError }) {
+function RightPanel({ data, selections, onSelect, onCheckout, activeBudget, setActiveBudget, shopResults, shopLoading, shopError, owned, ownedUrls, onWearOwned }) {
   const [activeTab, setActiveTab] = useState('top');
+  const [logged, setLogged] = useState(false);
   const clothing_options = data.clothing_options || {};
+  const ownedHere = owned?.[activeTab] || null;
+  const wearingDress = owned?.top?.category === 'dress';
+  const ownedCount = CATEGORIES.filter(c => owned?.[c]).length;
+  const ownedIds = [...CATEGORIES.map(c => owned?.[c]?.id), ...(owned?.accessories || []).map(a => a.id)].filter(Boolean);
 
   const currentTabProducts = shopResults[activeTab] || [];
   const currentTabOptions  = clothing_options[activeTab] || [];
@@ -552,15 +590,31 @@ function RightPanel({ data, selections, onSelect, onCheckout, activeBudget, setA
             fontFamily: G.serif, fontSize: '1.2rem', fontWeight: 600,
             color: G.text, letterSpacing: '0.01em',
           }}>
-            Shop This Look
+            {ownedCount ? 'Shop the Gaps' : 'Shop This Look'}
           </h3>
         </div>
         <p style={{
           fontSize: '0.68rem', color: G.textFaint, fontFamily: G.sans,
-          lineHeight: 1.5, marginBottom: '1rem',
+          lineHeight: 1.5, marginBottom: ownedCount ? '0.6rem' : '1rem',
         }}>
-          Pick a budget and we'll find real products from brands online — matched to your outfit.
+          {ownedCount
+            ? <><strong style={{ color: G.text }}>{ownedCount} of {wearingDress ? 3 : 4}</strong> pieces come from your wardrobe. Pick a budget to find the rest.</>
+            : "Pick a budget and we'll find real products from brands online — matched to your outfit."}
         </p>
+        {ownedIds.length > 0 && (
+          <button
+            onClick={async () => { if (logged) return; await onWearOwned?.(ownedIds); setLogged(true); }}
+            disabled={logged}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: '0.9rem',
+              background: logged ? 'rgba(47,125,79,0.08)' : 'transparent', color: logged ? '#2F7D4F' : G.text,
+              border: `1px solid ${logged ? 'rgba(47,125,79,0.35)' : 'rgba(43,38,32,0.18)'}`, borderRadius: 999,
+              padding: '0.35rem 0.8rem', fontSize: '0.7rem', fontWeight: 600, fontFamily: G.sans, boxShadow: 'none', cursor: logged ? 'default' : 'pointer',
+            }}
+          >
+            {logged ? <><Check size={12} /> Logged as worn today</> : <><ShirtIcon size={12} /> Wearing it? Log your pieces</>}
+          </button>
+        )}
 
         {/* Budget selector */}
         <div style={{
@@ -637,12 +691,26 @@ function RightPanel({ data, selections, onSelect, onCheckout, activeBudget, setA
             }}
           >
             {CAT_LABELS[cat]}
+            {owned?.[cat] && <span aria-label=" (yours)" style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: G.gold, marginLeft: 4, verticalAlign: 2 }} />}
           </button>
         ))}
       </div>
 
       {/* Product / suggestion grid */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '1rem 1rem 0' }}>
+        {ownedHere && (
+          <div style={{ marginBottom: '0.9rem' }}>
+            <OwnedCard item={ownedHere} url={ownedUrls[ownedHere.id]}
+              selected={(selections[activeTab] || []).some(s => s.isOwned && s.id === ownedHere.id)}
+              onSelect={it => onSelect(activeTab, { name: it.name, id: it.id, isOwned: true })} />
+            <p style={{ fontSize: '0.6rem', fontWeight: 700, letterSpacing: '0.14em', textTransform: 'uppercase', color: G.goldDim, fontFamily: G.sans, margin: '1rem 0 0.25rem' }}>Or swap it for something new</p>
+          </div>
+        )}
+        {activeTab === 'bottom' && wearingDress && (
+          <p style={{ fontSize: '0.7rem', color: G.textDim, fontFamily: G.sans, background: G.surfaceL, border: '1px solid rgba(43,38,32,0.08)', borderRadius: 9, padding: '0.6rem 0.75rem', marginBottom: '0.75rem' }}>
+            Not needed — you're wearing your {owned.top.name.toLowerCase()}.
+          </p>
+        )}
         {shopLoading ? (
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: 200, gap: '0.75rem' }}>
             <Loader2 size={20} strokeWidth={1.5} style={{ animation: 'spin 0.8s linear infinite', color: G.goldDim }} />
@@ -678,13 +746,13 @@ function RightPanel({ data, selections, onSelect, onCheckout, activeBudget, setA
               exit={{ opacity: 0 }} transition={{ duration: 0.25 }}
               style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}
             >
-              {activeBudget && (
+              {activeBudget && !ownedHere && !(activeTab === 'bottom' && wearingDress) && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', padding: '0.4rem 0.5rem', background: 'rgba(43,38,32,0.02)', borderRadius: 6, marginBottom: '0.25rem' }}>
                   <Loader2 size={11} strokeWidth={2} style={{ color: G.goldDim, animation: 'spin 0.8s linear infinite' }} />
                   <p style={{ fontSize: '0.65rem', color: G.textFaint, fontFamily: G.sans }}>No results for this category — showing AI suggestions</p>
                 </div>
               )}
-              {!activeBudget && (
+              {!activeBudget && !ownedHere && (
                 <p style={{ fontSize: '0.65rem', color: G.textFaint, fontFamily: G.sans, marginBottom: '0.25rem' }}>
                   Select a budget to find real products ↑
                 </p>
@@ -711,7 +779,7 @@ function RightPanel({ data, selections, onSelect, onCheckout, activeBudget, setA
 /* ── TOTAL ENSEMBLE BAR ──────────────────────────────────────────── */
 function TotalEnsembleBar({ selections, onCheckout, activeBudget }) {
   const allItems = CATEGORIES.flatMap(cat => selections[cat] || []);
-  const totalCount = allItems.length;
+  const totalCount = allItems.filter(i => !i.isOwned).length;     // the cart is what you'd buy
 
   const totalPrice = allItems.reduce((sum, item) => {
     if (!item?.price) return sum;
@@ -737,7 +805,9 @@ function TotalEnsembleBar({ selections, onCheckout, activeBudget }) {
                 fontSize: '0.6rem', color: G.textDim, fontFamily: G.sans,
                 overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', flex: 1,
               }}>{item.name}</p>
-              {item.price && (
+              {item.isOwned ? (
+                <span style={{ fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.08em', color: G.textFaint, fontFamily: G.sans, flexShrink: 0 }}>YOURS</span>
+              ) : item.price && (
                 <span style={{ fontSize: '0.6rem', color: G.gold, fontFamily: G.sans, flexShrink: 0 }}>
                   {item.price}
                 </span>
@@ -806,17 +876,26 @@ function TotalEnsembleBar({ selections, onCheckout, activeBudget }) {
 /* ════════════════════════════════════════════════
    MAIN COMPONENT
 ═══════════════════════════════════════════════════ */
-function Recommendation({ data }) {
+function Recommendation({ data, onWearOwned }) {
   const {
     clothing_options = {},
     gender,
+    owned = null,
   } = data;
 
+  // owned pieces start selected; the shop only fills the rest
   const [selections, setSelections] = useState(() => {
     const init = {};
-    CATEGORIES.forEach(cat => { init[cat] = []; });
+    CATEGORIES.forEach(cat => { init[cat] = owned?.[cat] ? [{ name: owned[cat].name, id: owned[cat].id, isOwned: true }] : []; });
     return init;
   });
+  const [ownedUrls, setOwnedUrls] = useState({});
+  useEffect(() => {
+    const list = [...CATEGORIES.map(c => owned?.[c]), ...(owned?.accessories || [])].filter(p => p?.image instanceof Blob);
+    const map = Object.fromEntries(list.map(p => [p.id, URL.createObjectURL(p.image)]));
+    setOwnedUrls(map);
+    return () => Object.values(map).forEach(u => URL.revokeObjectURL(u));
+  }, [owned]);
 
   const [activeBudget, setActiveBudget] = useState(null);
   const [shopResults,  setShopResults]  = useState({});
@@ -833,7 +912,9 @@ function Recommendation({ data }) {
       return;
     }
     const searchSelections = {};
+    const wearingDress = owned?.top?.category === 'dress';
     CATEGORIES.forEach(cat => {
+      if (owned?.[cat] || (cat === 'bottom' && wearingDress)) return;   // already covered by their wardrobe
       const opts = clothing_options[cat] || [];
       if (opts[0]) searchSelections[cat] = opts[0];
     });
@@ -850,7 +931,8 @@ function Recommendation({ data }) {
     setSelections(prev => {
       const current = prev[cat] || [];
       const idx = current.findIndex(s =>
-        s.isReal && item.isReal ? s.url === item.url : s.name === item.name && s.isReal === item.isReal
+        s.isOwned || item.isOwned ? s.isOwned && item.isOwned && s.id === item.id
+          : s.isReal && item.isReal ? s.url === item.url : s.name === item.name && s.isReal === item.isReal
       );
       return {
         ...prev,
@@ -860,7 +942,7 @@ function Recommendation({ data }) {
   }
 
   function handleCheckout() {
-    const allItems = CATEGORIES.flatMap(cat => selections[cat] || []);
+    const allItems = CATEGORIES.flatMap(cat => selections[cat] || []).filter(item => !item.isOwned);
     if (allItems.length === 0) return;
     const realItems = allItems.filter(item => item.url && item.url !== '#');
     const aiItems   = allItems.filter(item => !item.url || item.url === '#');
@@ -908,7 +990,7 @@ function Recommendation({ data }) {
         overflow: 'hidden',
       }}
     >
-      <LeftPanel data={data} selections={selections} />
+      <LeftPanel data={data} selections={selections} owned={owned} />
 
       <CenterPanel
         imageUrl={imageUrl}
@@ -928,6 +1010,9 @@ function Recommendation({ data }) {
         shopResults={shopResults}
         shopLoading={shopLoading}
         shopError={shopError}
+        owned={owned}
+        ownedUrls={ownedUrls}
+        onWearOwned={onWearOwned}
       />
     </motion.div>
   );

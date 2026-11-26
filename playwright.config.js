@@ -2,6 +2,7 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests',
+  testIgnore: ['unit/**'],          // node --test files (engine + prompt), not browser tests
   fullyParallel: false,
   retries: 1,
   reporter: [['html', { outputFolder: 'playwright-report', open: 'never' }], ['list']],

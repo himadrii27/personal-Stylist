@@ -8,6 +8,11 @@ import HomePage from './components/HomePage';
 import WardrobePage from './wardrobe/WardrobePage';
 import { getGeminiOutfit } from './utils/geminiService';
 import { loadPalette, savePalette, clearPalette, paletteForPrompt, seasonById } from './colour/seasons';
+import { listItems, logWear } from './wardrobe/store';
+import { wardrobeForPrompt } from './wardrobe/style';
+
+const USE_WARDROBE_KEY = 'personalStylistUseWardrobe';
+const readUseWardrobe = () => { try { return localStorage.getItem(USE_WARDROBE_KEY) !== 'off'; } catch { return true; } };
 
 // the colour page pulls in MediaPipe, so it only loads when opened
 const ColourPage = lazy(() => import('./colour/ColourPage'));
@@ -23,6 +28,13 @@ function App() {
   const [section, setSection] = useState('event');          // 'event' | 'wardrobe' | 'colours' once inside the app
   const [palette, setPalette] = useState(loadPalette);       // saved colour-season result, or null
   const [startOccasion, setStartOccasion] = useState(null);
+  const [wardrobeTab, setWardrobeTab] = useState('pieces');
+  const [wardrobeItems, setWardrobeItems] = useState(null);   // pieces, loaded for the event brief
+  const [useWardrobe, setUseWardrobe] = useState(readUseWardrobe);
+  const toggleUseWardrobe = () => setUseWardrobe(v => {
+    try { localStorage.setItem(USE_WARDROBE_KEY, v ? 'off' : 'on'); } catch { /* storage blocked */ }
+    return !v;
+  });
 
   const [userPrefs, setUserPrefs] = useState(() => {
     const saved = localStorage.getItem('personalStylistPrefs');
@@ -46,13 +58,27 @@ function App() {
     }
   }, [userPrefs]);
 
+  // the event brief needs the current wardrobe (it may have changed on the wardrobe page)
+  useEffect(() => {
+    if (!appStarted || section !== 'event') return;
+    listItems().then(setWardrobeItems).catch(() => setWardrobeItems([]));
+  }, [appStarted, section]);
+
   const generateRecommendation = async (occasionData) => {
     setIsLoading(true);
     setError(null);
     setRecommendation(null);
     try {
-      const result = await getGeminiOutfit(userPrefs, occasionData, paletteForPrompt(palette));
-      setRecommendation({ ...result, gender: userPrefs.gender });
+      const own = useWardrobe && wardrobeItems?.length ? wardrobeForPrompt(wardrobeItems) : null;
+      const result = await getGeminiOutfit(userPrefs, occasionData, paletteForPrompt(palette), own?.pieces);
+      // map Gemini's refs back to the pieces on this device
+      const piece = (ref) => (own && typeof ref === 'string' && own.refs[ref] ? wardrobeItems.find(i => i.id === own.refs[ref]) || null : null);
+      const fw = result?.from_wardrobe || {};
+      const owned = own ? {
+        top: piece(fw.top), bottom: piece(fw.bottom), outerwear: piece(fw.outerwear), footwear: piece(fw.footwear),
+        accessories: (fw.accessories || []).map(piece).filter(Boolean),
+      } : null;
+      setRecommendation({ ...result, gender: userPrefs.gender, owned });
       setView('recommendation');
     } catch (err) {
       console.error('[Stylist] generateRecommendation failed:', err);
@@ -69,7 +95,7 @@ function App() {
     return (
       <HomePage
         onGetStarted={(occ) => { setStartOccasion(typeof occ === 'string' ? occ : null); setSection('event'); setAppStarted(true); }}
-        onOpenWardrobe={() => { setSection('wardrobe'); setAppStarted(true); }}
+        onOpenWardrobe={() => { setWardrobeTab('pieces'); setSection('wardrobe'); setAppStarted(true); }}
         onOpenColours={() => { setSection('colours'); setAppStarted(true); }}
       />
     );
@@ -86,7 +112,7 @@ function App() {
           </button>
           <div className="hp-nav-cells">
             <button className="hp-nav-cell hp-nav-links" onClick={goHome}>← Home</button>
-            <button className="hp-nav-cell" onClick={() => setSection('wardrobe')}>Wardrobe</button>
+            <button className="hp-nav-cell" onClick={() => { setWardrobeTab('pieces'); setSection('wardrobe'); }}>Wardrobe</button>
             <button className="hp-nav-cell hp-nav-cta" onClick={() => setSection('event')}>Style my event</button>
           </div>
         </nav>
@@ -97,6 +123,7 @@ function App() {
               onSave={(p) => { savePalette(p); setPalette(p); }}
               onForget={() => { clearPalette(); setPalette(null); }}
               onStyleEvent={() => setSection('event')}
+              onCheckWardrobe={() => { setWardrobeTab('insights'); setSection('wardrobe'); }}
             />
           </Suspense>
         </main>
@@ -113,11 +140,17 @@ function App() {
           </button>
           <div className="hp-nav-cells">
             <button className="hp-nav-cell hp-nav-links" onClick={goHome}>← Home</button>
+            <button className="hp-nav-cell" onClick={() => setSection('colours')}>Colours</button>
             <button className="hp-nav-cell hp-nav-cta" onClick={() => setSection('event')}>Style my event</button>
           </div>
         </nav>
         <main style={{ paddingTop: 56, minHeight: '100vh' }}>
-          <WardrobePage />
+          <WardrobePage
+            season={palette ? seasonById(palette.seasonId) : null}
+            gender={userPrefs?.gender || null}
+            initialTab={wardrobeTab}
+            onOpenColours={() => setSection('colours')}
+          />
         </main>
       </>
     );
@@ -132,6 +165,7 @@ function App() {
         </button>
         <div className="hp-nav-cells">
           <button className="hp-nav-cell" onClick={goHome}>← Home</button>
+          <button className="hp-nav-cell" onClick={() => { setWardrobeTab('pieces'); setSection('wardrobe'); }}>Wardrobe</button>
           {view === 'recommendation' ? (
             <button className="hp-nav-cell hp-nav-cta" onClick={() => setView('form')}>← Brief</button>
           ) : recommendation ? (
@@ -193,6 +227,8 @@ function App() {
                   </motion.div>
                 )}
                 <PaletteNote palette={palette} onOpen={() => setSection('colours')} />
+                <WardrobeNote items={wardrobeItems} on={useWardrobe} onToggle={toggleUseWardrobe}
+                  onOpen={() => { setWardrobeTab('pieces'); setSection('wardrobe'); }} />
                 <CurrentVibeCard userPrefs={userPrefs} onEditProfile={() => { setUserPrefs(null); setRecommendation(null); setView('form'); }}>
                   <OccasionForm onSubmit={generateRecommendation} isLoading={isLoading} initialOccasion={startOccasion} />
                 </CurrentVibeCard>
@@ -230,7 +266,7 @@ function App() {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.3 }}
               >
-                <Recommendation data={recommendation} />
+                <Recommendation data={recommendation} onWearOwned={(ids) => logWear({ itemIds: ids })} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -259,6 +295,27 @@ function PaletteNote({ palette, onOpen }) {
         </>
       )}
     </button>
+  );
+}
+
+// second line above the brief: dress me from my own clothes (on by default once there's a wardrobe)
+function WardrobeNote({ items, on, onToggle, onOpen }) {
+  if (items === null) return null;
+  if (!items.length) {
+    return (
+      <button type="button" className="cl-note" onClick={onOpen}>
+        <span className="cl-note-icon" aria-hidden="true">＋</span>
+        <span>Add your clothes and we'll style events from what you own</span>
+        <span className="cl-note-go">My wardrobe →</span>
+      </button>
+    );
+  }
+  return (
+    <div className="cl-note cl-note--switch">
+      <span className="cl-note-dots" aria-hidden="true">{items.slice(-5).map(i => <span key={i.id} style={{ background: i.colour?.hex }} />)}</span>
+      <span id="wd-use-label">Style me from my wardrobe <small>· {items.length} piece{items.length === 1 ? '' : 's'}{on ? ', we shop only the gaps' : ''}</small></span>
+      <button type="button" role="switch" aria-checked={on} aria-labelledby="wd-use-label" className={`cl-switch${on ? ' is-on' : ''}`} onClick={onToggle}><span /></button>
+    </div>
   );
 }
 

@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Camera, Upload, X, RotateCcw, Sparkles } from 'lucide-react';
 import { removeBackground, isModelCached, HD_MODEL_URL, HD_MODEL_MB } from './segment/removeBackground';
-import { CATEGORIES } from './store';
+import { CATEGORIES, defaultTags } from './store';
+import { TagChips } from './parts';
 
 /* ════════════════════════════════════════════════
    ADD A PIECE — capture → cutting out → review → add.
@@ -82,7 +83,7 @@ function BeforeAfter({ photoUrl, cutoutUrl }) {
   );
 }
 
-export default function AddPieceSheet({ open, onClose, onAdd, startWithCamera }) {
+export default function AddPieceSheet({ open, onClose, onAdd, startWithCamera, hintCategory }) {
   const fileRef = useRef(null);
   const [step, setStep] = useState('choose');          // choose · camera · working · review · error
   const [photo, setPhoto] = useState(null);             // { blob, url }
@@ -108,6 +109,7 @@ export default function AddPieceSheet({ open, onClose, onAdd, startWithCamera })
     if (k !== i) return p;
     const next = { ...p, ...patch };
     if (patch.category && !next.nameTouched) next.name = autoName(next.colour, next.category);
+    if (patch.category && !next.tagsTouched) Object.assign(next, defaultTags(next.category));
     return next;
   }));
 
@@ -116,8 +118,8 @@ export default function AddPieceSheet({ open, onClose, onAdd, startWithCamera })
     try {
       const r = await removeBackground(blob, { model, onProgress: (label, loaded, total) => setProgress({ label, loaded, total }) });
       const list = r.pieces.map((p, k) => {
-        const category = p.category || guessCategory(p.width, p.height);
-        return { ...p, category, name: autoName(p.colour, category), selected: k === 0 || r.mode === 'person', nameTouched: false,
+        const category = p.category || (r.mode !== 'person' && hintCategory) || guessCategory(p.width, p.height);
+        return { ...p, category, ...defaultTags(category), name: autoName(p.colour, category), selected: k === 0 || r.mode === 'person', nameTouched: false, tagsTouched: false,
                  url: URL.createObjectURL(p.cutout), previewUrl: URL.createObjectURL(p.preview) };
       });
       setPieces(list); setActive(0);
@@ -155,7 +157,7 @@ export default function AddPieceSheet({ open, onClose, onAdd, startWithCamera })
     setSaving(true);
     try {
       await onAdd(chosen.map(p => ({
-        name: p.name.trim() || 'Untitled piece', category: p.category, colour: p.colour,
+        name: p.name.trim() || 'Untitled piece', category: p.category, colour: p.colour, warmth: p.warmth, dressiness: p.dressiness,
         image: p.cutout, width: p.width, height: p.height, model: result.model, source: result.mode,
       })));
     } finally {
@@ -250,6 +252,7 @@ export default function AddPieceSheet({ open, onClose, onAdd, startWithCamera })
                     <button key={c.id} role="radio" aria-checked={cur.category === c.id} className={`wd-chip${cur.category === c.id ? ' is-on' : ''}`} onClick={() => editPiece(active, { category: c.id })}>{c.label}</button>
                   ))}
                 </div>
+                <TagChips compact warmth={cur.warmth} dressiness={cur.dressiness} onChange={patch => editPiece(active, { ...patch, tagsTouched: true })} />
                 <label className="wd-hd">
                   <input type="checkbox" checked={hd} onChange={toggleHd} />
                   <span><strong>HD cut-out</strong> sharper edges on lace and fringe{hdCached ? '' : ` · ${HD_MODEL_MB} MB one-time download`}</span>

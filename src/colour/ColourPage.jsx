@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Camera, Upload, RotateCcw, Sparkles, X, ShieldCheck, Sun } from 'lucide-react';
+import { Camera, Upload, RotateCcw, Sparkles, X, ShieldCheck, Sun, Shirt } from 'lucide-react';
 import { FaceLandmarker } from '@mediapipe/tasks-vision';
 import { getLandmarker } from './faceLandmarker';
 import { measureFace, rankSeasons, describe, medianScores, spread, averageLab, labToHex } from './analyse';
@@ -292,7 +292,7 @@ function Chips({ list, crossed }) {
   );
 }
 
-function Result({ result, onRescan, onForget, onStyleEvent }) {
+function Result({ result, onRescan, onForget, onStyleEvent, onCheckWardrobe }) {
   const season = seasonById(result.seasonId);
   const close = seasonById(result.runnerUpId);
   const d = describe(result.scores);
@@ -342,6 +342,7 @@ function Result({ result, onRescan, onForget, onStyleEvent }) {
 
       <div className="wd-actions" style={{ marginTop: '1.75rem' }}>
         <button className="wd-btn" onClick={onStyleEvent}><Sparkles size={15} /> Style an event in my colours</button>
+        {onCheckWardrobe && <button className="wd-btn wd-btn--ghost" onClick={onCheckWardrobe}><Shirt size={15} /> Check my wardrobe against these</button>}
         <button className="wd-btn wd-btn--ghost" onClick={onRescan}><RotateCcw size={15} /> Scan again</button>
         <button className="wd-link" onClick={onForget}>Forget my palette</button>
       </div>
@@ -371,7 +372,7 @@ async function analysePhoto(file) {
 }
 
 /* ── page ───────────────────────────────────────────────────────────── */
-export default function ColourPage({ palette, onSave, onForget, onStyleEvent }) {
+export default function ColourPage({ palette, onSave, onForget, onStyleEvent, onCheckWardrobe }) {
   const [phase, setPhase] = useState(palette ? 'result' : 'intro');
   const [photoState, setPhotoState] = useState(null);           // null | 'working' | error message
   const fileRef = useRef(null);
@@ -392,7 +393,7 @@ export default function ColourPage({ palette, onSave, onForget, onStyleEvent }) 
     <div className="wd-page cl-page">
       <AnimatePresence mode="wait">
         {phase === 'result' && palette ? (
-          <Result key="res" result={palette} onStyleEvent={onStyleEvent}
+          <Result key="res" result={palette} onStyleEvent={onStyleEvent} onCheckWardrobe={onCheckWardrobe}
             onRescan={() => setPhase('scan')} onForget={() => { onForget(); setPhase('intro'); }} />
         ) : phase === 'scan' ? (
           <motion.div key="scan" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
